@@ -2,7 +2,7 @@
     <architecture>Nios II</architecture>
     <system>
         <sample_system_title>DE1-SoC Computer for Nios II</sample_system_title>
-        <cable>null</cable>
+        <cable>DE-SoC [USB-1]</cable>
         <processor>Nios2</processor>
         <reset_processor_during_load>false</reset_processor_during_load>
         <terminal>JTAG_UART</terminal>
@@ -10,7 +10,7 @@
     <program>
         <type>Assembly Program</type>
         <source_files>
-            <source_file filepath="true">pushbutton_led_interrupt.s</source_file>
+            <source_file filepath="true">button.s</source_file>
         </source_files>
         <options>
             <start_symbol>_start</start_symbol>
