@@ -7,7 +7,8 @@
 #
 # In hindsight, a less code intrusive approach would be to make a general 
 # subroutine that draws any inputted string of characters to the VGA...
-# (Oh well!)
+# (Although by hard-coding all of the letters, I'm free to set specific words to specific colours,
+# which is the ONE redeeming factor!)
 #
 # Subroutines used...
 # - Essentially a 'draw' for each individual question
