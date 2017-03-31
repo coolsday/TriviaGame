@@ -16,9 +16,13 @@
  	#r9 points to char buffer 
  	#r10 points to button 
  	#r11 points to timer
+ 	#r13 stores state of transition
+####################################################################################################################################
 
-#################################################################################################################################### 
  .global _start 
+ 
+ 	.include "vga_questions.s"
+
  	#global constants for device addresses and interrupt handlers 
  	.equ ADDR_VGA, 0x08000000 
  	.equ ADDR_CHAR, 0x09000000 
@@ -42,7 +46,7 @@
 	call clearScreen
  	#draw the menu on vga 
  	call drawMenu
-	#r13 holds the state of the transition
+	#r13 holds the initial state of the transition
 	mov r13, r2
  LOOP_START: 
  	br LOOP_START 
@@ -106,8 +110,8 @@
  DRAWMENU:
 	#call clear screen
 	call clearScreen
-	#display buffer screen for 2 seconds
-	call drawBuffer
+	#display buffer (loading) screen for 2 seconds
+	call drawLoading
 	#call clear screen
 	call clearScreen
 	#draw menu
@@ -118,10 +122,11 @@
 
 DRAWQ1:
 	#call clear screen
+	call clearScreen
 	#draw Q1
 	call drawQuestion1
 	#store the new state
-	mov r13, r2
+	movia r13, Q1
 br EXIT
  
 DRAWANSWER1:
@@ -129,8 +134,12 @@ DRAWANSWER1:
 	call clearScreen
 	#draw answer for question 1
 	call drawAnswer1
+	#clear screen
+	call clearScreen
+	#draw Q2
+	call drawQuestion2
 	#store new state
-	mov r13, r2
+	movia r13, Q2
 br EXIT
 
 DRAWANSWER2:
@@ -138,8 +147,12 @@ DRAWANSWER2:
 	call clearScreen
 	#display question 2
 	call drawAnswer2
+	#clear screen
+	call clearScreen
+	#draw Q3
+	call drawQuestion3
 	#store new state
-	mov r13, r2
+	movia r13, Q3
 br EXIT
 
 DRAWANSWER3:
@@ -147,6 +160,10 @@ DRAWANSWER3:
 	call clearScreen
 	#display answer for question 2
 	call drawAnswer3
+	#clear screen
+	call clearScreen
+	#draw menu
+	call drawMenu
 	#store new state
 	mov r13, r2
 br EXIT
@@ -172,23 +189,7 @@ drawMenu:
 	addi sp, sp, 4
  ret
 
-
- #this subroutine draws a word on the VGA  
- #this can be davids drawline subroutine
- drawQuestion1: 
- 	#r4 holds the color value of the text passed in as an argument to this subroutine
-	addi sp, sp, -4
-	stw ra, 0(sp)
-	
- 	movui r4, 0xF100
-	movia r5, 1024*100 + 2*40
-	add r5, r5, r8
-	call draw_B
-	movia r2, Q1
-	
-	ldw ra, 0(sp)
-	addi sp, sp, 4
- ret
+#testing subroutines used to model control flow of program
 
 drawAnswer1:
 	#say for question 1, button 0 is correct
@@ -197,11 +198,11 @@ drawAnswer1:
 	
 	#get values of button pressed and store in r12
 	ldwio r12, 0(r10)
-	andi r12, r12, 0x1
+	andi r12, r12, 0x4
 	#draw incorrect answer (draw no for now, until later on)
-	beq r12, r0, INCORRECT_ANSWER_1
+	beq r12, r0, incorrectAnswer1
 	#draw correct answer (draw yes for now, until later on)
-	bne r12, r0, CORRECT_ANSWER_1
+	bne r12, r0, correctAnswer1
 	#start timer, no continous, no interrupts
 	movui r12, 0x4
 	stwio r12, 4(r11)
@@ -216,22 +217,95 @@ drawAnswer1:
 	ldw ra, 0(sp)
 	addi sp, sp, 4
 ret
+
+incorrectAnswer1:
+	addi sp, sp, -4
+	stw ra, 0(sp)
+	movui r4, 0xF100
+	movia r5, 1024*100 + 2*40
+	add r5, r5, r8
+
+	#NO
+	call draw_N
+	mov r5, r2
+	call draw_O
+
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+ret
+
+correctAnswer1:
+	addi sp, sp, -4
+	stw ra, 0(sp)
+	movui r4, 0x780F
+	movia r5, 1024*100 + 2*40
+	add r5, r5, r8
+
+	#YES
+	call draw_Y
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_S
+
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+ret
+
 	 
  
 drawAnswer2:
-	#save stack
+	#say for question 2, button 1 is correct
 	addi sp, sp, -4
 	stw ra, 0(sp)
-
-	#some question goes here
-	movia r2, Q2
-
-	#load from stack
+	
+	#get values of button pressed and store in r12
+	ldwio r12, 0(r10)
+	andi r12, r12, 0x4
+	#draw incorrect answer (draw no for now, until later on)
+	beq r12, r0, incorrectAnswer1
+	#draw correct answer (draw yes for now, until later on)
+	bne r12, r0, correctAnswer1
+	#start timer, no continous, no interrupts
+	movui r12, 0x4
+	stwio r12, 4(r11)
+	#only display buffer screen for a short period of time (2 seconds)
+ timerOnePoll:
+	ldwio r12, 0(r11)
+	andi r12, r12, 0x1
+	beq r12, r0, timerOnePoll
+	#reset timeout bit
+	stwio r0, 0(r11)
+	
 	ldw ra, 0(sp)
 	addi sp, sp, 4
 ret
 
 drawAnswer3:
+	#say for question 3, button 0 is correct
+	addi sp, sp, -4
+	stw ra, 0(sp)
+	
+	#get values of button pressed and store in r12
+	ldwio r12, 0(r10)
+	andi r12, r12, 0x8
+	#draw incorrect answer (draw no for now, until later on)
+	beq r12, r0, incorrectAnswer1
+	#draw correct answer (draw yes for now, until later on)
+	bne r12, r0, correctAnswer1
+	#start timer, no continous, no interrupts
+	movui r12, 0x4
+	stwio r12, 4(r11)
+	#only display buffer screen for a short period of time (2 seconds)
+ timerOnePoll:
+	ldwio r12, 0(r11)
+	andi r12, r12, 0x1
+	beq r12, r0, timerOnePoll
+	#reset timeout bit
+	stwio r0, 0(r11)
+	
+	ldw ra, 0(sp)
+	addi sp, sp, 4
 ret
 
  drawLoading:
@@ -242,7 +316,22 @@ ret
 	movui r4, 0xFD20
 	movia r5, 1024*100 + 2*40
 	add r5, r5, r8
-	call draw_C
+
+	#LOADING
+	call draw_L
+	mov r5, r2
+	call draw_O
+	mov r5, r2
+	call draw_A
+	mov r5, r2
+	call draw_D
+	mov r5, r2
+	call draw_I
+	mov r5, r2
+	call draw_N
+	mov r5, r2
+	call draw_G
+
 	#start timer, no continous, no interrupts
 	movui r12, 0x4
 	stwio r12, 4(r11)
