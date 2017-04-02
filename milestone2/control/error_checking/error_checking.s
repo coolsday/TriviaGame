@@ -91,6 +91,8 @@
  br EXIT
  
  SERVE_BUTTON:
+ 	#read in button value pressed from edge capture register
+ 	ldwio r14, 12(r10)
 	#acknowledge the interrupt
 	movia et, 0xFFFFFFFF
 	stwio et, 12(r10)
@@ -123,6 +125,8 @@
 DRAWQ1:
 	#call clear screen
 	call clearScreen
+	#display loading screen
+	call drawLoading
 	#draw Q1
 	call drawQuestion1
 	#store the new state
@@ -190,35 +194,28 @@ drawMenu:
  ret
 
 #testing subroutines used to model control flow of program
-
+#r14 used to store the value of buttons before we clear the edge capture register to aknowledge the interrupt
 drawAnswer1:
-	#say for question 1, button 0 is correct
+	#for question 1, button 2 is correct
 	addi sp, sp, -4
 	stw ra, 0(sp)
 	
-	#get values of button pressed and store in r12
-	ldwio r12, 0(r10)
-	andi r12, r12, 0x4
+	#determine if button 2 was pressed 
+	andi r14, r14, 0x4
 	#draw incorrect answer (draw no for now, until later on)
-	beq r12, r0, incorrectAnswer1
+	beq r14, r0, INCORRECTANSWER1
 	#draw correct answer (draw yes for now, until later on)
-	bne r12, r0, correctAnswer1
-	#start timer, no continous, no interrupts
-	movui r12, 0x4
-	stwio r12, 4(r11)
+	bne r14, r0, CORRECTANSWER1
+WAIT1:
 	#only display buffer screen for a short period of time (2 seconds)
- timerOnePoll:
-	ldwio r12, 0(r11)
-	andi r12, r12, 0x1
-	beq r12, r0, timerOnePoll
-	#reset timeout bit
-	stwio r0, 0(r11)
+	#display this screen for 2 seconds
+	call timerOnePoll
 	
 	ldw ra, 0(sp)
 	addi sp, sp, 4
 ret
 
-incorrectAnswer1:
+INCORRECTANSWER1:
 	addi sp, sp, -4
 	stw ra, 0(sp)
 	movui r4, 0xF100
@@ -232,9 +229,9 @@ incorrectAnswer1:
 
 	ldw ra, 0(sp)
 	addi sp, sp, 4
-ret
+br WAIT1
 
-correctAnswer1:
+CORRECTANSWER1:
 	addi sp, sp, -4
 	stw ra, 0(sp)
 	movui r4, 0x780F
@@ -250,59 +247,111 @@ correctAnswer1:
 
 	ldw ra, 0(sp)
 	addi sp, sp, 4
-ret
+br WAIT1
 
-	 
+INCORRECTANSWER2:
+	addi sp, sp, -4
+	stw ra, 0(sp)
+	movui r4, 0xF100
+	movia r5, 1024*100 + 2*40
+	add r5, r5, r8
+
+	#NO
+	call draw_N
+	mov r5, r2
+	call draw_O
+
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+br WAIT2
+
+CORRECTANSWER2:
+	addi sp, sp, -4
+	stw ra, 0(sp)
+	movui r4, 0x780F
+	movia r5, 1024*100 + 2*40
+	add r5, r5, r8
+
+	#YES
+	call draw_Y
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_S
+
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+br WAIT2
+
+INCORRECTANSWER3:
+	addi sp, sp, -4
+	stw ra, 0(sp)
+	movui r4, 0xF100
+	movia r5, 1024*100 + 2*40
+	add r5, r5, r8
+
+	#NO
+	call draw_N
+	mov r5, r2
+	call draw_O
+
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+br WAIT3
+
+CORRECTANSWER3:
+	addi sp, sp, -4
+	stw ra, 0(sp)
+	movui r4, 0x780F
+	movia r5, 1024*100 + 2*40
+	add r5, r5, r8
+
+	#YES
+	call draw_Y
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_S
+
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+br WAIT3
  
 drawAnswer2:
-	#say for question 2, button 1 is correct
+	#for question 2, button 2 is correct
 	addi sp, sp, -4
 	stw ra, 0(sp)
 	
-	#get values of button pressed and store in r12
-	ldwio r12, 0(r10)
-	andi r12, r12, 0x4
+	#get the status of button 2
+	andi r14, r14, 0x4
 	#draw incorrect answer (draw no for now, until later on)
-	beq r12, r0, incorrectAnswer1
+	beq r14, r0, INCORRECTANSWER2
 	#draw correct answer (draw yes for now, until later on)
-	bne r12, r0, correctAnswer1
-	#start timer, no continous, no interrupts
-	movui r12, 0x4
-	stwio r12, 4(r11)
+	bne r14, r0, CORRECTANSWER2
+WAIT2:
 	#only display buffer screen for a short period of time (2 seconds)
- timerOnePoll:
-	ldwio r12, 0(r11)
-	andi r12, r12, 0x1
-	beq r12, r0, timerOnePoll
-	#reset timeout bit
-	stwio r0, 0(r11)
+	#display this screen for 2 seconds
+	call timerOnePoll
 	
 	ldw ra, 0(sp)
 	addi sp, sp, 4
 ret
 
 drawAnswer3:
-	#say for question 3, button 0 is correct
+	#for question 3, button 4 is correct
 	addi sp, sp, -4
 	stw ra, 0(sp)
 	
-	#get values of button pressed and store in r12
-	ldwio r12, 0(r10)
-	andi r12, r12, 0x8
+	#get status of button 3 and store in r14
+	andi r14, r14, 0x8
 	#draw incorrect answer (draw no for now, until later on)
-	beq r12, r0, incorrectAnswer1
+	beq r14, r0, INCORRECTANSWER3
 	#draw correct answer (draw yes for now, until later on)
-	bne r12, r0, correctAnswer1
-	#start timer, no continous, no interrupts
-	movui r12, 0x4
-	stwio r12, 4(r11)
+	bne r14, r0, CORRECTANSWER3
+WAIT3:
 	#only display buffer screen for a short period of time (2 seconds)
- timerOnePoll:
-	ldwio r12, 0(r11)
-	andi r12, r12, 0x1
-	beq r12, r0, timerOnePoll
-	#reset timeout bit
-	stwio r0, 0(r11)
+	#display this screen for 2 seconds
+	call timerOnePoll
 	
 	ldw ra, 0(sp)
 	addi sp, sp, 4
@@ -332,17 +381,22 @@ ret
 	mov r5, r2
 	call draw_G
 
-	#start timer, no continous, no interrupts
-	movui r12, 0x4
-	stwio r12, 4(r11)
-	#only display buffer screen for a short period of time (2 seconds)
- timerOnePoll:
-	ldwio r12, 0(r11)
-	andi r12, r12, 0x1
-	beq r12, r0, timerOnePoll
-	#reset timeout bit
-	stwio r0, 0(r11)
+	#only display loading screen for a short period of time (2 seconds)
+	#display this screen for 2 seconds
+	call timerOnePoll
 	
 	ldw ra, 0(sp)
 	addi sp, sp, 4
  ret
+ 
+ timerOnePoll:
+	#start timer, no continous, no interrupts
+	movui r12, 0x4
+	stwio r12, 4(r11)
+ POLL:
+	ldwio r12, 0(r11)
+	andi r12, r12, 0x1
+	beq r12, r0, POLL
+	#reset timeout bit
+	stwio r0, 0(r11)
+ret
