@@ -66,8 +66,8 @@
  	#clear edge capture of button to avoid unecessary interrupts
 	movia r12, 0xFFFFFFFF
  	stwio r12, 12(r10)
-	#enable button interrupts
-	movi r12, 0xF
+	#enable button interrupts for 1 button
+	movi r12, 0x1
 	stwio r12, 8(r10)
  	#clear timeout bit of timer 
  	stwio r0, 0(r11)
