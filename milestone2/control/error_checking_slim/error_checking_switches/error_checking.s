@@ -37,8 +37,9 @@
  	.equ PERIOD, 200000000 
 	.equ START, 0x01
 	.equ Q1, 0x02
-	.equ Q2, 0x03
-	.equ Q3, 0x04
+	.equ A1, 0x03
+	.equ A2, 0x04
+	.equ A3, 0x05
 	.equ X_MAX, 318
 	.equ Y_MAX, 237
 	.equ STACK, 0x03FFFFFC
@@ -50,7 +51,7 @@
 	#clear screen initially
 	call clearScreen
  	#draw the menu on vga 
- 	call drawMenu
+ 	call drawMainMenu
 	#r13 holds the initial state of the transition which is the menu or starting screen
 	movia r13, START
 	#enable processor interrupts
@@ -64,12 +65,14 @@
  	wrctl ctl0, r0
  	#draw the screen according to state value
  	movia at, START
+	beq r13, at, DRAWMENU
+	movia at, Q1
  	beq r13, at, DRAWQ1
- 	movia at, Q1
+ 	movia at, A1
  	beq r13, at, DRAWANSWER1
- 	movia at, Q2
+ 	movia at, A2
  	beq r13, at, DRAWANSWER2 
- 	movia at, Q3
+ 	movia at, A3
  	beq r13, at, DRAWANSWER3
  LOOP_END: 
  	#reset state of interrupt (r16) to 0
@@ -88,6 +91,7 @@
  	movia r15, SWITCHES
 	movia sp, STACK
 	
+	mov r16, r0
  	#clear edge capture of button to avoid unecessary interrupts
 	movia r12, 0xFFFFFFFF
  	stwio r12, 12(r10)
@@ -107,6 +111,13 @@
 	wrctl ctl3, r12
  ret 
 
+ DRAWMENU:
+	#clear screen
+	call clearScreen
+	#display menu
+	call drawMainMenu
+br LOOP_END
+ 
  DRAWQ1:
  	#clear screen
  	call clearScreen
@@ -147,8 +158,8 @@
  	call drawAnswer3
  	#clear screen
  	call clearScreen
- 	#display menu or starting screen once again
- 	call drawMenu
+ 	#display Game Over Screen
+ 	call drawGameOver
  br LOOP_END
 
 
@@ -167,35 +178,43 @@
  SERVE_BUTTON:
  	#read in switch value
  	ldwio r14, 0(r15)
+	andi r14, r14, 0xF #Get only SW 0-3
  	#store the state of the interrupt (1 if on/ 0 if off)
  	movi r16, 1
 	#acknowledge the interrupt
 	movia et, 0xFFFFFFFF
 	stwio et, 12(r10)
 	#check what state we are in (menu or question)
-	movia et, START 
-	beq r13, et, QUESTION1
+	movia et, START
+	beq r13, et, MENU
 	movia et, Q1
+	beq r13, et, QUESTION1
+	movia et, A1
 	beq r13, et, ANSWER1
-	movia et, Q2
+	movia et, A2
 	beq r13, et, ANSWER2
-	movia et, Q3
+	movia et, A3
 	beq r13, et, ANSWER3
  br EXIT
 
+MENU:
+	#store the state of Q1
+	movia r13, Q1
+br EXIT
+
 QUESTION1:
 	#store the new state
-	movia r13, Q1
+	movia r13, A1 #
 br EXIT
  
 ANSWER1:
 	#store new state
-	movia r13, Q2
+	movia r13, A2
 br EXIT
 
 ANSWER2:
 	#store new state
-	movia r13, Q3
+	movia r13, A3
 br EXIT
 
 ANSWER3:
@@ -212,26 +231,6 @@ EXIT:
 ################################################
 #the draw functions are void - they dont return anything or accept anything
 ################################################
-drawMenu:
-	addi sp, sp, -4
-	stw ra, 0(sp)
-	
-	#return state in r2
-	#menu text
-	movui r4, 0x780F
-	movia r5, 1024*100 + 2*40
-	add r5, r5, r8
-	call draw_M
-	mov r5, r2
-	call draw_E
-	mov r5, r2
-	call draw_N
-	mov r5, r2
-	call draw_U
-	
-	ldw ra, 0(sp)
-	addi sp, sp, 4
- ret
 
 #testing subroutines used to model control flow of program
 #r14 used to store the value of buttons before we clear the edge capture register to aknowledge the interrupt
@@ -241,11 +240,11 @@ drawAnswer1:
 	stw ra, 0(sp)
 	
 	#determine if switch 2 is on (value = 0x8)
-	movi r4, 8
+	movi r4, 4
 	#draw incorrect answer (draw no for now, until later on)
-	beq r14, r16, INCORRECTANSWER
+	beq r14, r4, CORRECTANSWER
 	#draw correct answer (draw yes for now, until later on)
-	bne r14, r16, CORRECTANSWER
+	bne r14, r4, INCORRECTANSWER
 WAIT1:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
@@ -261,11 +260,11 @@ drawAnswer2:
 	stw ra, 0(sp)
 	
 	#get state of switch 2 (1 if on/0 if off)
-	movi r4, 8
+	movi r4, 4
 	#draw incorrect answer (draw no for now, until later on)
-	beq r14, r16, INCORRECTANSWER
+	beq r14, r4, CORRECTANSWER
 	#draw correct answer (draw yes for now, until later on)
-	bne r14, r16, CORRECTANSWER
+	bne r14, r4, INCORRECTANSWER
 WAIT2:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
@@ -276,16 +275,16 @@ WAIT2:
 ret
 
 drawAnswer3:
-	#for question 3, switch 4 is correct
+	#for question 3, switch 3 is correct
 	addi sp, sp, -4
 	stw ra, 0(sp)
 	
-	#get state of switch 4 (1 if on/ 0 if off)
-	movui r4, 16
+	#get state of switch 3 (1 if on/ 0 if off)
+	movui r4, 8
 	#draw incorrect answer (draw no for now, until later on)
-	beq r14, r16, INCORRECTANSWER
+	beq r14, r4, CORRECTANSWER
 	#draw correct answer (draw yes for now, until later on)
-	bne r14, r16, CORRECTANSWER
+	bne r14, r4, INCORRECTANSWER
 WAIT3:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
@@ -358,11 +357,11 @@ INCORRECTANSWER:
 	addi sp, sp, 4
 
 	#go back to the subroutine that called it
-	movia et, Q1
+	movia et, A1
 	beq r13, et, WAIT1
-	movia et, Q2
+	movia et, A2
 	beq r13, et, WAIT2
-	movia et, Q3
+	movia et, A3
 	beq r13, et, WAIT3
 	#pray for this not to happen 
 br LOOP_END
@@ -385,11 +384,11 @@ CORRECTANSWER:
 	addi sp, sp, 4
 
 	#go back to the subroutine that called it
-	movia et, Q1
+	movia et, A1
 	beq r13, et, WAIT1
-	movia et, Q2
+	movia et, A2
 	beq r13, et, WAIT2
-	movia et, Q3
+	movia et, A3
 	beq r13, et, WAIT3
 	#pray for this not to happen 
 br LOOP_END

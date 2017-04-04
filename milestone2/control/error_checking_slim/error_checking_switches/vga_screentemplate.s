@@ -8,6 +8,7 @@
 # - drawTextTemplate
 # - clearScreen
 # - clearQABoxes
+# - drawHappyFace
 #############################################################################
 
 .include "vga_alphanumeric.s"
@@ -62,6 +63,9 @@
 # Other helpful location constants
 .equ ADJ_DIAGONAL_PIXEL, 1024*1 + 2*1
 .equ SPACE, 2*4
+
+.equ FACE_SIZE, 70
+.equ EYE_SIZE, 10
 
 #############################################################################
 # Void subroutine that draws in the base background for each question
@@ -203,11 +207,13 @@ drawTextTemplate:
 	addi sp, sp, -4
     stw ra, 0(sp)
 	
-	# KEY 3
+	# SW 3
 	movui r4, WHITE
 	movia r5, TOP_LEFT_LINE1_POS
 	add r5, r5, r8
-	call draw_KEY
+	call draw_S
+	mov r5, r2
+	call draw_W
 	
 	mov r5, r2
 	movui r4, RED
@@ -217,10 +223,12 @@ drawTextTemplate:
 	movui r4, WHITE
 	call draw_Colon
 	
-	# KEY 2
+	# SW 2
 	movia r5, BOT_LEFT_LINE1_POS
 	add r5, r5, r8
-	call draw_KEY
+	call draw_S
+	mov r5, r2
+	call draw_W
 	
 	mov r5, r2
 	movui r4, CYAN
@@ -230,10 +238,12 @@ drawTextTemplate:
 	movui r4, WHITE
 	call draw_Colon
 	
-	# KEY 1
+	# SW 1
 	movia r5, TOP_RIGHT_LINE1_POS
 	add r5, r5, r8
-	call draw_KEY
+	call draw_S
+	mov r5, r2
+	call draw_W
 	
 	mov r5, r2
 	movui r4, GREEN
@@ -243,10 +253,12 @@ drawTextTemplate:
 	movui r4, WHITE
 	call draw_Colon
 	
-	# KEY 0
+	# SW 0
 	movia r5, BOT_RIGHT_LINE1_POS
 	add r5, r5, r8
-	call draw_KEY
+	call draw_S
+	mov r5, r2
+	call draw_W
 	
 	mov r5, r2
 	movui r4, YELLOW
@@ -350,3 +362,87 @@ clearQABoxes:
 	ldw ra, 0(sp)
 	addi sp, sp, 4
 ret
+
+#############################################################################
+# Void subroutine that accepts a starting location and draws a 70x70 pixel 
+# happy face making use of 'fillRect', will clobber registers 'r4' - 'r7'
+#############################################################################
+drawHappyFace:
+	addi sp, sp, -4
+	stw ra, 0(sp)
+	stw r16, 4(sp)
+	
+	mov r16, r4 # Save parameter value because it WILL get clobbered
+	
+	# Draw the face background
+	movui r4, YELLOW
+	mov r5, r16
+    movui r6, FACE_SIZE
+    movui r7, FACE_SIZE
+    call fillRectangle
+	
+	# Draw the eyes
+	movui r4, WHITE
+	movia r5, 1024*10 + 2*15
+	add r5, r5, r16
+	movui r6, EYE_SIZE
+	movui r7, EYE_SIZE
+	call fillRectangle
+	
+	movia r5, 1024*10 + 2*45
+	add r5, r5, r16
+	movui r6, EYE_SIZE
+	movui r7, EYE_SIZE
+	call fillRectangle
+	
+	movui r4, BLACK
+	movia r5, 1024*13 + 2*18
+	add r5, r5, r16
+	movui r6, 4
+	movui r7, 4
+	call fillRectangle
+	
+	movia r5, 1024*13 + 2*48
+	add r5, r5, r16
+	movui r6, 4
+	movui r7, 4
+	call fillRectangle
+	
+	# Draw the mouth
+	movia r5, 1024*45 + 2*15
+	add r5, r5, r16
+	movui r6, 5
+	movui r7, 10
+	call fillRectangle
+	
+    movia r5, 1024*45 + 2*50
+	add r5, r5, r16
+	movui r6, 5
+	movui r7, 10
+	call fillRectangle
+	
+	movia r5, 1024*53 + 2*18
+	add r5, r5, r16
+	movui r6, 34
+	movui r7, 5
+	call fillRectangle
+	
+	# Draw the blush
+	movui r4, 0xFD6F
+	movia r5, 1024*30 + 2*8
+	add r5, r5, r16
+	movui r6, 8
+	movui r7, 8
+	call fillRectangle
+	
+	movia r5, 1024*30 + 2*54
+	add r5, r5, r16
+	movui r6, 8
+	movui r7, 8
+	call fillRectangle
+	
+	ldw ra, 0(sp)
+	ldw r16, 4(sp)
+	addi sp, sp, 4
+ret
+#0xf81f
