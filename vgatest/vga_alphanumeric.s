@@ -11,12 +11,13 @@
 #
 # Subroutines used...
 # - Pretty much 1 subroutine for EACH letter and number (I'm not writing each one)
-# - Drawing Symbols:           ! . ? , : ( )
+# - Drawing Symbols:           ! . ? , : ( ) -
 # - Drawing Common Words:      KEY, QUESTION, WHAT, WHICH, INSTRUCTION, NIOS2,
 #                              INT, HOW, AND, PROGRAM, EXECUTE, THE, ARE,
 #                              VALID, FOLLOWING, HEX, ADD, MOV, VALUE, STORE,
 #                              ADDRESS, SUBROUTINE, CALL, DECIMAL, CTL, STATEMENT,
-#                              REGISTER, SET, ANY, 000, THIS, NEED, WITH
+#                              REGISTER, SET, ANY, 000, THIS, NEED, WITH, ANSWER,
+#                              START, CORRECT, HIGH, SCORE, PRESS
 #############################################################################
 
 .include "vga_basicdraw.s"
@@ -1625,6 +1626,29 @@ ret
 
 #############################################################################
 
+draw_Dash:
+	addi sp, sp, -8
+	stw ra, 0(sp)
+	stw r16, 4(sp)
+	
+	mov r16, r5 # Store starting position because 'r5' will get mass-clobbered
+	
+	
+	movui r6, 4
+	addi r5, r16, 1024*4
+	call drawHline
+	mov r5, r2
+	call drawHline
+	
+	addi r2, r16, 2*6
+	
+	ldw ra, 0(sp)
+	ldw r16, 4(sp)
+	addi sp, sp, 8
+ret
+
+#############################################################################
+
 draw_KEY:
 	addi sp, sp, -4
 	stw ra, 0(sp)
@@ -2343,6 +2367,136 @@ draw_WITH:
 	call draw_T
 	mov r5, r2
 	call draw_H
+	mov r5, r2
+	
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+ret	
+
+#############################################################################
+
+draw_ANSWER:
+	addi sp, sp, -4
+	stw ra, 0(sp)
+	
+	call draw_A
+	mov r5, r2
+	call draw_N
+	mov r5, r2
+	call draw_S
+	mov r5, r2
+	call draw_W
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_R
+	mov r5, r2
+	
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+ret
+
+#############################################################################
+
+draw_START:
+	addi sp, sp, -4
+	stw ra, 0(sp)
+	
+	call draw_S
+	mov r5, r2
+	call draw_T
+	mov r5, r2
+	call draw_A
+	mov r5, r2
+	call draw_R
+	mov r5, r2
+	call draw_T
+	mov r5, r2
+	
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+ret
+
+#############################################################################
+
+draw_CORRECT:	
+	addi sp, sp, -4
+	stw ra, 0(sp)
+	
+	call draw_C
+	mov r5, r2
+	call draw_O
+	mov r5, r2
+	call draw_R
+	mov r5, r2
+	call draw_R
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_C
+	mov r5, r2
+	call draw_T
+	mov r5, r2
+	
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+ret
+
+#############################################################################
+
+draw_HIGH:
+	addi sp, sp, -4
+	stw ra, 0(sp)
+
+	call draw_H
+	mov r5, r2
+	call draw_I
+	mov r5, r2
+	call draw_G
+	mov r5, r2
+	call draw_H
+	mov r5, r2
+	
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+ret	
+
+#############################################################################
+
+draw_SCORE:
+	addi sp, sp, -4
+	stw ra, 0(sp)
+
+	call draw_S
+	mov r5, r2
+	call draw_C
+	mov r5, r2
+	call draw_O
+	mov r5, r2
+	call draw_R
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+ret	
+
+#############################################################################
+
+draw_PRESS:
+	addi sp, sp, -4
+	stw ra, 0(sp)
+
+	call draw_P
+	mov r5, r2
+	call draw_R
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_S
+	mov r5, r2
+	call draw_S
 	mov r5, r2
 	
 	ldw ra, 0(sp)

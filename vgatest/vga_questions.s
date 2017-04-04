@@ -10,7 +10,9 @@
 # (Oh well!)
 #
 # Subroutines used...
+# - drawMainMenu
 # - Essentially a 'draw' for each individual question
+# - drawGameOver
 #############################################################################
 
 .include "vga_screentemplate.s"
@@ -80,6 +82,383 @@
 .equ Q13_ANS_OFFSET, 2*45
 .equ Q14_ANS_OFFSET, 2*45
 .equ Q15_ANS_OFFSET, 2*45
+
+#############################################################################
+# Void subroutine that draws in the Main Menu
+# Does not accept arguments but will clobber parameter registers 'r4' - 'r7'
+#############################################################################
+drawMainMenu:
+	addi sp, sp, -4
+    stw ra, 0(sp)
+	
+	call clearScreen
+	call drawRainbowBorder
+	
+	# Draw Title of Game
+	movia r5, QUESTION_BOX_POS + 2*90
+	add r5, r5, r8
+	movui r4, RED
+	call draw_A
+	mov r5, r2
+	movui r4, ORANGE
+	call draw_S
+	mov r5, r2
+	movui r4, YELLOW
+	call draw_S
+	mov r5, r2
+	movui r4, GREEN_YELLOW
+	call draw_E
+	mov r5, r2
+	movui r4, GREEN
+	call draw_M
+	mov r5, r2
+	movui r4, CYAN
+	call draw_B
+	mov r5, r2
+	movui r4, DARK_CYAN
+	call draw_L
+	mov r5, r2
+	movui r4, BLUE
+	call draw_I
+	mov r5, r2
+	movui r4, PURPLE
+	call draw_A
+	
+	# Draw description
+	movia r5, QUESTION_BOX_POS + 1024*30
+    add r5, r5, r8
+	movui r4, WHITE
+	call draw_A
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_T
+	mov r5, r2
+	call draw_R
+	mov r5, r2
+	call draw_I
+	mov r5, r2
+	call draw_V
+	mov r5, r2
+	call draw_I
+	mov r5, r2
+	call draw_A
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_G
+	mov r5, r2
+	call draw_A
+	mov r5, r2
+	call draw_M
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_B
+	mov r5, r2
+	call draw_Y
+	mov r5, r2
+    call draw_Colon
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4, DARK_CYAN
+	call draw_X
+	mov r5, r2
+	call draw_I
+	mov r5, r2
+	call draw_H
+	mov r5, r2
+	call draw_A
+	mov r5, r2
+	call draw_I
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4, WHITE
+	call draw_A
+	mov r5, r2
+	call draw_N
+	mov r5, r2
+	call draw_D
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4,PINK
+	call draw_D
+	mov r5, r2
+	call draw_A
+	mov r5, r2
+	call draw_V
+	mov r5, r2
+	call draw_I
+	mov r5, r2
+	call draw_D
+	mov r5, r2
+	movui r4, WHITE
+	call draw_ExclamationMark
+ 
+    # Draw SW Instructions
+    movia r5, QUESTION_BOX_POS + 1024*60
+    add r5, r5, r8
+	call draw_S
+	mov r5, r2
+	call draw_W
+	mov r5, r2
+	call draw_LeftBracket
+	mov r5, r2
+	movui r4, GREEN
+	call draw_0
+	mov r5, r2
+	movui r4, WHITE
+	call draw_Dash
+	mov r5, r2
+	movui r4, GREEN
+	call draw_3
+	mov r5, r2
+	movui r4, WHITE
+	call draw_RightBracket
+	mov r5, r2
+	call draw_Colon
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_S
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_L
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_C
+	mov r5, r2
+	call draw_T
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_ANSWER
+	mov r5, r2
+	
+	# Draw KEY Instructions
+    movia r5, QUESTION_BOX_POS + 1024*75
+    add r5, r5, r8
+	call draw_KEY
+	mov r5, r2
+	call draw_LeftBracket
+	mov r5, r2
+	movui r4, RED
+	call draw_0
+	mov r5, r2
+	movui r4, WHITE
+	call draw_RightBracket
+	mov r5, r2
+	call draw_Colon
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_E
+	mov r5, r2
+	call draw_N
+	mov r5, r2
+	call draw_T
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_R
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_ANSWER
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4, ORANGE
+	call draw_O
+	mov r5, r2
+	call draw_R
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4, WHITE
+	call draw_START
+	
+	# Draw HEX 0-1 Instructions
+    movia r5, QUESTION_BOX_POS + 1024*105
+    add r5, r5, r8
+	call draw_HEX
+	mov r5, r2
+	call draw_LeftBracket
+	mov r5, r2
+	movui r4, CYAN
+	call draw_0
+	mov r5, r2
+	movui r4, WHITE
+	call draw_Dash
+	mov r5, r2
+	movui r4, CYAN
+	call draw_1
+	mov r5, r2
+	movui r4, WHITE
+	call draw_RightBracket
+	mov r5, r2
+	call draw_Colon
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4, GREEN
+	call draw_CORRECT
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4, WHITE
+	call draw_ANSWER
+	mov r5, r2
+	call draw_S
+	addi r5, r5, SPACE
+	
+	# Draw HEX 2-3 Instructions
+    movia r5, QUESTION_BOX_POS + 1024*120
+    add r5, r5, r8
+	call draw_HEX
+	mov r5, r2
+	call draw_LeftBracket
+	mov r5, r2
+	movui r4, CYAN
+	call draw_2
+	mov r5, r2
+	movui r4, WHITE
+	call draw_Dash
+	mov r5, r2
+	movui r4, CYAN
+	call draw_3
+	mov r5, r2
+	movui r4, WHITE
+	call draw_RightBracket
+	mov r5, r2
+	call draw_Colon
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4, RED
+	call draw_I
+	mov r5, r2
+	call draw_N
+	mov r5, r2
+	call draw_CORRECT
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4, WHITE
+	call draw_ANSWER
+	mov r5, r2
+	call draw_S
+	addi r5, r5, SPACE
+	
+	# Draw HEX 4-5 Instructions
+    movia r5, QUESTION_BOX_POS + 1024*135
+    add r5, r5, r8
+	call draw_HEX
+	mov r5, r2
+	call draw_LeftBracket
+	mov r5, r2
+	movui r4, CYAN
+	call draw_4
+	mov r5, r2
+	movui r4, WHITE
+	call draw_Dash
+	mov r5, r2
+	movui r4, CYAN
+	call draw_5
+	mov r5, r2
+	movui r4, WHITE
+	call draw_RightBracket
+	mov r5, r2
+	call draw_Colon
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4, YELLOW
+	call draw_HIGH
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_SCORE
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	# Draw LEDR Instructions
+    movia r5, QUESTION_BOX_POS + 1024*150
+    add r5, r5, r8
+	movui r4, WHITE
+	call draw_L
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_D
+	mov r5, r2
+	call draw_R
+	mov r5, r2
+	call draw_Colon
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4, GREEN_YELLOW
+	call draw_T
+	mov r5, r2
+	call draw_I
+	mov r5, r2
+	call draw_M
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_L
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_F
+	mov r5, r2
+	call draw_T
+	
+	# Draw Press Instruction
+    movia r5, QUESTION_BOX_POS + 1024*180 + 2*50
+    add r5, r5, r8
+	movui r4, WHITE
+	call draw_PRESS
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_KEY
+	mov r5, r2
+	call draw_LeftBracket
+	mov r5, r2
+	movui r4, RED
+	call draw_0
+	mov r5, r2
+	movui r4, WHITE
+	call draw_RightBracket
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_T
+	mov r5, r2
+	call draw_O
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4, GREEN
+	call draw_START
+	mov r5, r2
+	movui r4, WHITE
+	call draw_ExclamationMark
+
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+ret
 
 #############################################################################
 # Void subroutine that draws in Question 1
@@ -2859,6 +3238,135 @@ drawQuestion15:
 	add r5, r5, r8
 	call draw_MOV
 	
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+ret
+
+#############################################################################
+# Void subroutine that draws in the Game Over Screen
+# Does not accept arguments but will clobber parameter registers 'r4' - 'r7'
+#############################################################################
+drawGameOver:
+	addi sp, sp, -4
+    stw ra, 0(sp)
+	
+	call clearScreen
+	call drawRainbowBorder
+	
+	# Draw Game Over Text
+    movia r5, QUESTION_BOX_POS + 1024*30 + 2*94
+    add r5, r5, r8
+	movui r4, RED
+	call draw_G
+	mov r5, r2
+	call draw_A
+	mov r5, r2
+	call draw_M
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_O
+	mov r5, r2
+	call draw_V
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_R
+	
+	movia r4, QUESTION_BOX_POS + 1024*70 + 2*18
+	add r4, r4, r8
+	call drawHappyFace
+	
+	movia r4, QUESTION_BOX_POS + 1024*70 + 2*103
+	add r4, r4, r8
+	call drawHappyFace
+	
+	movia r4, QUESTION_BOX_POS + 1024*70 + 2*188
+	add r4, r4, r8
+	call drawHappyFace
+	
+	# Draw misc. text 
+    movia r5, QUESTION_BOX_POS + 1024*165 + 2*23
+    add r5, r5, r8
+	movui r4, WHITE
+	call draw_D
+	mov r5, r2
+	call draw_I
+	mov r5, r2
+	call draw_D
+	mov r5, r2
+    addi r5, r5, SPACE
+	
+	call draw_Y
+	mov r5, r2
+	call draw_O
+	mov r5, r2
+	call draw_U
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_B
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_A
+	mov r5, r2
+	call draw_T
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_THE
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4, YELLOW
+	call draw_HIGH
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_SCORE
+	mov r5, r2
+	movui r4, WHITE
+	call draw_QuestionMark
+	
+	# Draw Press Instruction
+    movia r5, QUESTION_BOX_POS + 1024*180 + 2*45
+    add r5, r5, r8
+	movui r4, WHITE
+	call draw_PRESS
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_KEY
+	mov r5, r2
+	call draw_LeftBracket
+	mov r5, r2
+	movui r4, RED
+	call draw_0
+	mov r5, r2
+	movui r4, WHITE
+	call draw_RightBracket
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_T
+	mov r5, r2
+	call draw_O
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	movui r4, GREEN
+	call draw_R
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_START
+	mov r5, r2
+	movui r4, WHITE
+	call draw_ExclamationMark
+
 	ldw ra, 0(sp)
 	addi sp, sp, 4
 ret

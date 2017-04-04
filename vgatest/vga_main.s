@@ -40,7 +40,7 @@ _start:
 	movia r8, ADDR_VGA
  
 	call clearScreen
-	call drawQuestion6
+	call drawQuestion1
 		
 		
 LOOPY:
