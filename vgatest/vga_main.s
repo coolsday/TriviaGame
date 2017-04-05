@@ -40,7 +40,8 @@ _start:
 	movia r8, ADDR_VGA
  
 	call clearScreen
-	call drawQuestion1
+	movui r14, 9
+	call drawIncorrectAnswer
 		
 		
 LOOPY:
