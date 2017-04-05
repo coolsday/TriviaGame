@@ -7,8 +7,11 @@
 # - drawBaseBackground
 # - drawTextTemplate
 # - clearScreen
-# - clearQABoxes
+# - fillQABoxes
 # - drawHappyFace
+# - drawSadFace
+# - drawCorrectAnswer
+# - drawIncorrectAnswer
 #############################################################################
 
 .include "vga_alphanumeric.s"
@@ -313,15 +316,12 @@ CLEAR_DONE:
 ret
 
 #############################################################################
-# Void subroutine that clears only the Q&A Boxes by filling them with black
-# Does not accept arguments but will clobber parameter registers 'r4' - 'r7'
+# Void subroutine that fills the Q&A Boxes with an inputted colour,
+# will clobber parameter registers 'r4' - 'r7'
 #############################################################################
-clearQABoxes:
+fillQABoxes:
 	addi sp, sp, -4
 	stw ra, 0(sp)
-	
-	# Initialize calls of 'fillRectangle'
-	movui r4, BLACK
 	
 	# We make 5 calls to 'fillRectangle' to clear the 5 text boxes on the screen
 	movia r5, TOP_LEFT_BOX_POS
@@ -352,13 +352,6 @@ clearQABoxes:
     movui r7, CHOICE_BOX_HEIGHT - 2
     call fillRectangle
 	
-	movia r5, QUESTION_BOX_POS
-    add r5, r5, r8
-    addi r5, r5, ADJ_DIAGONAL_PIXEL
-    movui r6, QUESTION_BOX_WIDTH - 2
-    movui r7, QUESTION_BOX_HEIGHT - 2
-    call fillRectangle
-	
 	ldw ra, 0(sp)
 	addi sp, sp, 4
 ret
@@ -368,7 +361,7 @@ ret
 # happy face making use of 'fillRect', will clobber registers 'r4' - 'r7'
 #############################################################################
 drawHappyFace:
-	addi sp, sp, -4
+	addi sp, sp, -8
 	stw ra, 0(sp)
 	stw r16, 4(sp)
 	
@@ -443,6 +436,288 @@ drawHappyFace:
 	
 	ldw ra, 0(sp)
 	ldw r16, 4(sp)
+	addi sp, sp, 8
+ret
+
+#############################################################################
+# Void subroutine that accepts a starting location and draws a 70x70 pixel 
+# happy face making use of 'fillRect', will clobber registers 'r4' - 'r7'
+#############################################################################
+drawSadFace:
+	addi sp, sp, -8
+	stw ra, 0(sp)
+	stw r16, 4(sp)
+	
+	mov r16, r4 # Save parameter value because it WILL get clobbered
+	
+	# Draw the face background
+	movui r4, YELLOW
+	mov r5, r16
+    movui r6, FACE_SIZE
+    movui r7, FACE_SIZE
+    call fillRectangle
+	
+	# Draw the eyes
+	movui r4, WHITE
+	movia r5, 1024*10 + 2*15
+	add r5, r5, r16
+	movui r6, EYE_SIZE
+	movui r7, EYE_SIZE
+	call fillRectangle
+	
+	movia r5, 1024*10 + 2*45
+	add r5, r5, r16
+	movui r6, EYE_SIZE
+	movui r7, EYE_SIZE
+	call fillRectangle
+	
+	movui r4, BLACK
+	movia r5, 1024*13 + 2*18
+	add r5, r5, r16
+	movui r6, 4
+	movui r7, 4
+	call fillRectangle
+	
+	movia r5, 1024*13 + 2*48
+	add r5, r5, r16
+	movui r6, 4
+	movui r7, 4
+	call fillRectangle
+	
+	# Draw the mouth
+	movia r5, 1024*45 + 2*15
+	add r5, r5, r16
+	movui r6, 5
+	movui r7, 10
+	call fillRectangle
+	
+    movia r5, 1024*45 + 2*50
+	add r5, r5, r16
+	movui r6, 5
+	movui r7, 10
+	call fillRectangle
+	
+	movia r5, 1024*43 + 2*18
+	add r5, r5, r16
+	movui r6, 34
+	movui r7, 5
+	call fillRectangle
+	
+	# Draw the blush
+	movui r4, 0xFD6F
+	movia r5, 1024*30 + 2*8
+	add r5, r5, r16
+	movui r6, 8
+	movui r7, 8
+	call fillRectangle
+	
+	movia r5, 1024*30 + 2*54
+	add r5, r5, r16
+	movui r6, 8
+	movui r7, 8
+	call fillRectangle
+	
+	# Draw stream of tears
+	movui r4, 0x5FF
+	movia r5, 1024*17 + 2*19
+	add r5, r5, r16
+	movui r6, 2
+	movui r7, 4
+	call fillRectangle
+	
+	movia r5, 1024*25 + 2*19
+	add r5, r5, r16
+	movui r6, 2
+	movui r7, 4
+	call fillRectangle
+	
+	movia r5, 1024*33 + 2*19
+	add r5, r5, r16
+	movui r6, 2
+	movui r7, 4
+	call fillRectangle
+	
+	movia r5, 1024*19 + 2*49
+	add r5, r5, r16
+	movui r6, 2
+	movui r7, 4
+	call fillRectangle
+	
+	movia r5, 1024*27 + 2*49
+	add r5, r5, r16
+	movui r6, 2
+	movui r7, 4
+	call fillRectangle
+	
+	movia r5, 1024*35 + 2*49
+	add r5, r5, r16
+	movui r6, 2
+	movui r7, 4
+	call fillRectangle
+	
+	ldw ra, 0(sp)
+	ldw r16, 4(sp)
+	addi sp, sp, 8
+ret
+
+#############################################################################
+# Void subroutine that draws in the screen indicating a correct answer
+# Does not accept arguments but will clobber parameter registers 'r4' - 'r7'
+#############################################################################
+drawCorrectAnswer:
+	addi sp, sp, -8
+    stw ra, 0(sp)
+	stw r16, 4(sp)
+    
+	# Draw in the border
+	call drawBaseBackground
+	
+	# Determine which box to highlight
+	movui r4, GREEN
+	movui r6, CHOICE_BOX_WIDTH - 2
+    movui r7, CHOICE_BOX_HEIGHT - 2
+	
+    movui r16, 8
+	beq r14, r16, FILLCORRECT_TOPLEFT
+	movui r16, 4
+	beq r14, r16, FILLCORRECT_BOTLEFT
+	movui r16, 2
+	beq r14, r16, FILLCORRECT_TOPRIGHT
+	movui r16, 1
+	beq r14, r16, FILLCORRECT_BOTRIGHT
+	
+	FILLCORRECT_ALLBOXES:
+	call fillQABoxes
+	br FILLCORRECT_END
+	
+	FILLCORRECT_TOPLEFT: 
+	movia r5, TOP_LEFT_BOX_POS
+    add r5, r5, r8
+    addi r5, r5, ADJ_DIAGONAL_PIXEL
+    call fillRectangle
+	br FILLCORRECT_END
+	
+	FILLCORRECT_BOTLEFT: 
+	movia r5, BOT_LEFT_BOX_POS
+    add r5, r5, r8
+    addi r5, r5, ADJ_DIAGONAL_PIXEL
+    call fillRectangle
+	br FILLCORRECT_END
+	
+	FILLCORRECT_TOPRIGHT: 
+	movia r5, TOP_RIGHT_BOX_POS
+    add r5, r5, r8
+    addi r5, r5, ADJ_DIAGONAL_PIXEL
+    call fillRectangle
+	br FILLCORRECT_END
+	
+	FILLCORRECT_BOTRIGHT: 
+	movia r5, BOT_RIGHT_BOX_POS
+    add r5, r5, r8
+    addi r5, r5, ADJ_DIAGONAL_PIXEL
+    call fillRectangle
+	br FILLCORRECT_END
+	
+	FILLCORRECT_END:
+	movia r4, QUESTION_BOX_POS + 1024*15 + 2*18
+	add r4, r4, r8
+	call drawHappyFace
+	
+	movia r4, QUESTION_BOX_POS + 1024*15 + 2*188
+	add r4, r4, r8
+	call drawHappyFace
+	
+	movia r5, QBOX_LINE3_POS + 2*96
+	add r5, r5, r8
+	movui r4, GREEN
+	call draw_CORRECT
+	mov r5, r2
+	call draw_ExclamationMark
+	
+	ldw ra, 0(sp)
+	ldw r16, 4(sp)
+	addi sp, sp, 8
+ret
+
+#############################################################################
+# Void subroutine that draws in the screen indicating a correct answer
+# Does not accept arguments but will clobber parameter registers 'r4' - 'r7'
+#############################################################################
+drawIncorrectAnswer:
+	addi sp, sp, -8
+    stw ra, 0(sp)
+    stw r16, 4(sp)
+	
+	# Draw in the border
+	call drawBaseBackground
+	
+	# Determine which box to highlight
+	movui r4, RED
+	movui r6, CHOICE_BOX_WIDTH - 2
+    movui r7, CHOICE_BOX_HEIGHT - 2
+	
+    movui r16, 8
+	beq r14, r16, FILLINCORRECT_TOPLEFT
+	movui r16, 4
+	beq r14, r16, FILLINCORRECT_BOTLEFT
+	movui r16, 2
+	beq r14, r16, FILLINCORRECT_TOPRIGHT
+	movui r16, 1
+	beq r14, r16, FILLINCORRECT_BOTRIGHT
+	
+	FILLINCORRECT_ALLBOXES:
+	call fillQABoxes
+	br FILLINCORRECT_END
+	
+	FILLINCORRECT_TOPLEFT: 
+	movia r5, TOP_LEFT_BOX_POS
+    add r5, r5, r8
+    addi r5, r5, ADJ_DIAGONAL_PIXEL
+    call fillRectangle
+	br FILLINCORRECT_END
+	
+	FILLINCORRECT_BOTLEFT: 
+	movia r5, BOT_LEFT_BOX_POS
+    add r5, r5, r8
+    addi r5, r5, ADJ_DIAGONAL_PIXEL
+    call fillRectangle
+	br FILLINCORRECT_END
+	
+	FILLINCORRECT_TOPRIGHT: 
+	movia r5, TOP_RIGHT_BOX_POS
+    add r5, r5, r8
+    addi r5, r5, ADJ_DIAGONAL_PIXEL
+    call fillRectangle
+	br FILLINCORRECT_END
+	
+	FILLINCORRECT_BOTRIGHT: 
+	movia r5, BOT_RIGHT_BOX_POS
+    add r5, r5, r8
+    addi r5, r5, ADJ_DIAGONAL_PIXEL
+    call fillRectangle
+	br FILLINCORRECT_END
+	
+	FILLINCORRECT_END:
+	movia r4, QUESTION_BOX_POS + 1024*15 + 2*18
+	add r4, r4, r8
+	call drawSadFace
+	
+	movia r4, QUESTION_BOX_POS + 1024*15 + 2*188
+	add r4, r4, r8
+	call drawSadFace
+	
+	movia r5, QBOX_LINE3_POS + 2*88
+	add r5, r5, r8
+	movui r4, RED
+	call draw_I
+	mov r5, r2
+	call draw_N
+	mov r5, r2
+	call draw_CORRECT
+	mov r5, r2
+	call draw_ExclamationMark
+	
+	ldw ra, 0(sp)
+	ldw r16, 4(sp)
 	addi sp, sp, 4
 ret
-#0xf81f

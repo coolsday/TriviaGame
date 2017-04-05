@@ -389,7 +389,7 @@ DRAWANSWER14:
 	movia et, A15
 	beq r13, et, ANSWER15 
  br EXIT
-
+ 
 MENU:
 	#store the state of Q1
 	movia r13, Q1
@@ -841,10 +841,8 @@ INCORRECTANSWER:
 	movia r5, 1024*100 + 2*40
 	add r5, r5, r8
 
-	#NO
-	call draw_N
-	mov r5, r2
-	call draw_O
+	# Drsw screen for incorrect answer
+	call drawIncorrectAnswer
 
 	ldw ra, 0(sp)
 	addi sp, sp, 4
@@ -890,12 +888,8 @@ CORRECTANSWER:
 	movia r5, 1024*100 + 2*40
 	add r5, r5, r8
 
-	#YES
-	call draw_Y
-	mov r5, r2
-	call draw_E
-	mov r5, r2
-	call draw_S
+	# Draw screen for correct answer
+	call drawCorrectAnswer
 
 	ldw ra, 0(sp)
 	addi sp, sp, 4
