@@ -75,6 +75,7 @@
  	beq r16, r0, LOOP_START
  	#disable external interrupts before drawing
  	wrctl ctl0, r0
+	wrctl ctl3, r0 #######################################################################
  	#draw the screen according to state value
  	movia at, START
 	beq r13, at, DRAWMENU
@@ -112,10 +113,17 @@
  	beq r13, at, DRAWANSWER15
  LOOP_END: 
  	#reset state of interrupt (r16) to 0
+	#clear edge capture of button to avoid unecessary interrupts
  	mov r16, r0
+	movia r12, 0xFFFFFFFF
+ 	stwio r12, 12(r10)
  	#enable external processor interrupts
+	movi at, IRQ_DEV
+	wrctl ctl3, at
  	movia at, 0x1
  	wrctl ctl0, at
+	
+	
  br LOOP_START
 
 	 
@@ -158,11 +166,13 @@ br LOOP_END
  	#clear screen
  	call clearScreen
  	#loading screen
- 	call drawLoading
+ 	call drawLoadingScreen
+	call timerOnePoll
  	#clear screen
  	call clearScreen
  	#display Q1
  	call drawQuestion1
+	call timerOnePoll
  br LOOP_END
 
  DRAWANSWER1:
@@ -174,6 +184,7 @@ br LOOP_END
  	call clearScreen
  	#display Q2
  	call drawQuestion2
+	call timerOnePoll
  br LOOP_END
 
  DRAWANSWER2:
@@ -185,6 +196,7 @@ br LOOP_END
  	call clearScreen
  	#display Q3
  	call drawQuestion3
+	call timerOnePoll
  br LOOP_END
 
  DRAWANSWER3:
@@ -196,6 +208,7 @@ br LOOP_END
  	call clearScreen
  	#display Q4
  	call drawQuestion4
+	call timerOnePoll
  br LOOP_END
 
  DRAWANSWER4:
@@ -207,6 +220,7 @@ br LOOP_END
  	call clearScreen
  	#display Q5
  	call drawQuestion5
+	call timerOnePoll
  br LOOP_END
 
 DRAWANSWER5:
@@ -218,6 +232,7 @@ DRAWANSWER5:
  	call clearScreen
  	#display Q6
  	call drawQuestion6
+	call timerOnePoll
  br LOOP_END
 
 DRAWANSWER6:
@@ -229,6 +244,7 @@ DRAWANSWER6:
  	call clearScreen
  	#display Q7
  	call drawQuestion7
+	call timerOnePoll
  br LOOP_END
 
 DRAWANSWER7:
@@ -240,6 +256,7 @@ DRAWANSWER7:
  	call clearScreen
  	#display Q8
  	call drawQuestion8
+	call timerOnePoll
  br LOOP_END
 
 DRAWANSWER8:
@@ -251,6 +268,7 @@ DRAWANSWER8:
  	call clearScreen
  	#display Q9
  	call drawQuestion9
+	call timerOnePoll
  br LOOP_END
 
  DRAWANSWER9:
@@ -262,6 +280,7 @@ DRAWANSWER8:
  	call clearScreen
  	#display Q10
  	call drawQuestion10
+	call timerOnePoll
  br LOOP_END
 
 DRAWANSWER10:
@@ -273,6 +292,7 @@ DRAWANSWER10:
  	call clearScreen
  	#display Q11
  	call drawQuestion11
+	call timerOnePoll
  br LOOP_END
 
 DRAWANSWER11:
@@ -284,6 +304,7 @@ DRAWANSWER11:
  	call clearScreen
  	#display Q12
  	call drawQuestion12
+	call timerOnePoll
  br LOOP_END
 
 DRAWANSWER12:
@@ -295,6 +316,7 @@ DRAWANSWER12:
  	call clearScreen
  	#display Q13
  	call drawQuestion13
+	call timerOnePoll
  br LOOP_END
 
 DRAWANSWER13:
@@ -306,6 +328,7 @@ DRAWANSWER13:
  	call clearScreen
  	#display Q14
  	call drawQuestion14
+	call timerOnePoll
  br LOOP_END
 
 DRAWANSWER14:
@@ -317,6 +340,7 @@ DRAWANSWER14:
  	call clearScreen
  	#display Q15
  	call drawQuestion15
+	call timerOnePoll
  br LOOP_END
 
 
@@ -329,6 +353,7 @@ DRAWANSWER14:
  	call clearScreen
  	#display Game Over Screen
  	call drawGameOver
+	call timerOnePoll
  br LOOP_END
 
 
@@ -787,37 +812,7 @@ WAIT15:
 	addi sp, sp, 4
 ret
 
- drawLoading:
-	addi sp, sp, -4
-	stw ra, 0(sp)
-	
-	#draw crap
-	movui r4, 0xFD20
-	movia r5, 1024*100 + 2*40
-	add r5, r5, r8
 
-	#LOADING
-	call draw_L
-	mov r5, r2
-	call draw_O
-	mov r5, r2
-	call draw_A
-	mov r5, r2
-	call draw_D
-	mov r5, r2
-	call draw_I
-	mov r5, r2
-	call draw_N
-	mov r5, r2
-	call draw_G
-
-	#only display loading screen for a short period of time (2 seconds)
-	#display this screen for 2 seconds
-	call timerOnePoll
-	
-	ldw ra, 0(sp)
-	addi sp, sp, 4
- ret
  
  timerOnePoll:
 	#start timer, no continous, no interrupts

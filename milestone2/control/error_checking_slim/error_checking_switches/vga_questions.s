@@ -11,6 +11,7 @@
 #
 # Subroutines used...
 # - drawMainMenu
+# - drawLoadingScreen
 # - Essentially a 'draw' for each individual question
 # - drawGameOver
 #############################################################################
@@ -456,6 +457,100 @@ drawMainMenu:
 	movui r4, WHITE
 	call draw_ExclamationMark
 
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+ret
+
+#############################################################################
+# Void subroutine that draws in the loading screen
+# Does not accept arguments but will clobber parameter registers 'r4' - 'r7'
+#############################################################################
+drawLoadingScreen:
+	addi sp, sp, -4
+    stw ra, 0(sp)
+	
+	call clearScreen
+	call drawRainbowBorder
+	
+    # Draw a happy face
+	movia r4, QUESTION_BOX_POS + 1024*70 + 2*103
+	add r4, r4, r8
+	call drawHappyFace
+	
+	# Draw "Now Loading"
+    movia r5, QUESTION_BOX_POS + 1024*150 + 2*80
+    add r5, r5, r8
+	movui r4, ORANGE
+	call draw_N
+	mov r5, r2
+	call draw_O
+	mov r5, r2
+	call draw_W
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_L
+	mov r5, r2
+	call draw_O
+	mov r5, r2
+	call draw_A
+	mov r5, r2
+	call draw_D
+	mov r5, r2
+	call draw_I
+	mov r5, r2
+	call draw_N
+	mov r5, r2
+	call draw_G
+	mov r5, r2
+	call draw_Period
+	mov r5, r2
+	call draw_Period
+	mov r5, r2
+	call draw_Period
+
+	# Draw "Please wait warmly"
+    movia r5, QUESTION_BOX_POS + 1024*165 + 2*50
+    add r5, r5, r8
+	movui r4, WHITE
+	call draw_P
+	mov r5, r2
+	call draw_L
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	call draw_A
+	mov r5, r2
+	call draw_S
+	mov r5, r2
+	call draw_E
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_W
+	mov r5, r2
+	call draw_A
+	mov r5, r2
+	call draw_I
+	mov r5, r2
+	call draw_T
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_W
+	mov r5, r2
+	call draw_A
+	mov r5, r2
+	call draw_R
+	mov r5, r2
+	call draw_M
+	mov r5, r2
+	call draw_L
+	mov r5, r2
+	call draw_Y
+	mov r5, r2
+	call draw_ExclamationMark
+	
 	ldw ra, 0(sp)
 	addi sp, sp, 4
 ret
