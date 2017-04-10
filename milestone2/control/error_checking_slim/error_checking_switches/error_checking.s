@@ -1,13 +1,8 @@
 # Store high score / # correct answers / # wrong answers in memory
-# load wav file into memory
 .section .data
 NUM_A_CORRECT: .word 0
 NUM_A_INCORRECT: .word 0
 HIGH_SCORE: .word 0
-WAV_FILE: .incbin "test3.wav" 
-TETRIS: 
-	.align 2
-	.skip 1881600 
 
 .section .text
 #################################################################################################################################### 
@@ -32,6 +27,13 @@ TETRIS:
  	#r14 stores the data from switches
 	#r15 points to the switches
  	#r16 stores the state of the interrupt using active high convention
+	
+	
+	#r20 - stores a flag variable that dictates if we are in a timed question
+    #r21 - counter that dictates how many LEDs are lit
+	#r22 - is another temporary register
+	
+	
 ####################################################################################################################################
 
  .global _start 
@@ -48,14 +50,11 @@ TETRIS:
  	.equ ADDR_CHAR, 0x09000000 
 	.equ ADDR_7SEG1, 0xFF200020
     .equ ADDR_7SEG2, 0xFF200030
+	.equ ADDR_REDLEDS, 0xFF200000
  	.equ SWITCHES, 0xFF200040
  	.equ BUTTON, 0xFF200050 
  	.equ IRQ_DEV, 0x02
  	.equ TIMER, 0xFF202000 
- 	.equ AUDIO_CODEC, 0xFF203040
-
- 	#sound length values
- 	.equ SOUND_LENGTH, 470400 #tetris
 	
 	# Constants for establishing timer periods
 	.equ POINT_FIVE_SECONDS, 50000000 
@@ -72,24 +71,21 @@ TETRIS:
 	.equ A5, 0x07 
 	.equ A6, 0x08 
 	.equ A7, 0x09 
-	.equ A8, 0x10 
-	.equ A9, 0x11
-	.equ A10, 0x12
-	.equ A11, 0x13
-	.equ A12, 0x14
-	.equ A13, 0x15
-	.equ A14, 0x16
-	.equ A15, 0x17
+	.equ A8, 0x0A 
+	.equ A9, 0x0B
+	.equ A10, 0x0C
+	.equ A11, 0x0D
+	.equ A12, 0x0E
+	.equ A13, 0x0F
+	.equ A14, 0x10
+	.equ A15, 0x11
 	
 	# Misc. constants
 	.equ X_MAX, 318
 	.equ Y_MAX, 237
 	.equ STACK, 0x03FFFFFC
- 
- 
+
  _start: 
- 	#extract 32 bit samples from wav file
- 	call extractSamples
 	#initialise pointers to device address and constants 
  	call init
 	#clear screen initially
@@ -102,10 +98,61 @@ TETRIS:
 	movia at, 0x1
 	wrctl ctl0, at 
 	#MAIN PROGRAM
- LOOP_START:
- 	#transition to next state if button pressed or interrupt had happened
- 	beq r16, r0, LOOP_START
- 	#disable external interrupts before drawing
+	
+LOOP_START:
+    # If we are not in a question state then don't bother enabling timer
+	beq r20, r0, TIMED_REST
+
+# Reenable interrupts 
+RE_POLL:
+    movia r12, 1
+	wrctl ctl0, r12
+
+# Polling loop that stops when either a push button interrupt occurs or timer has timed out
+TIMED_Q:
+	ldwio r12, 0(r11)
+	andi r12, r12, 0x1
+	bne r16, r0, LOOP_MID
+	beq r12, r0, TIMED_Q
+	
+    # If we have timed out, disable interrupts for a while and update LEDs
+	wrctl ctl0, r0 
+
+	# Reset timeout bit
+	stwio r0, 0(r11)
+	
+	call updateLEDS
+
+	# If all the LEDs are not lit then we have ran out of time
+	beq r21, r0, NO_TIME
+
+# If there are still LEDs left, then we still have time so we reset the timer and loop again	
+STILL_TIME:
+	# Set period of timer
+	movia r12, TWO_SECONDS
+	andi r22, r12, 0x0000FFFF
+	stwio r22, 8(r11) # Low period
+	movia r22, 0xFFFF0000
+	and r22, r12, r22
+	srli r22, r22, 16 
+	stwio r22, 12(r11) # High period
+	
+	# Start timer, no continous, no interrupts
+	movui r12, 0x4
+	stwio r12, 4(r11)
+br RE_POLL
+
+NO_TIME:
+    # Change state as IF an interrupt occured
+	addi r13, r13, 1
+    movia r16, 1
+    mov r14, r0 # Record a default incorrect answer 
+
+TIMED_REST:
+	beq r16, r0, LOOP_START
+
+LOOP_MID:
+	mov r20, r0  # Temporarily disable timed question functionality
  	wrctl ctl0, r0
 	wrctl ctl3, r0 
  	#draw the screen according to state value
@@ -155,45 +202,68 @@ TETRIS:
  	movia at, 0x1
  	wrctl ctl0, at
 	
+ br LOOP_START	
 	
- br LOOP_START
+ # LOOP_START:
+ 	##transition to next state if button pressed or interrupt had happened
+ 	# beq r16, r0, LOOP_START
+    ##disable external interrupts before drawing
+ # LOOP_MID:
+ 	# wrctl ctl0, r0
+	# wrctl ctl3, r0 
+ 	##draw the screen according to state value
+ 	# movia at, START
+	# beq r13, at, DRAWMENU
+	# movia at, Q1
+ 	# beq r13, at, DRAWQ1
+ 	# movia at, A1
+ 	# beq r13, at, DRAWANSWER1
+ 	# movia at, A2
+ 	# beq r13, at, DRAWANSWER2 
+ 	# movia at, A3
+ 	# beq r13, at, DRAWANSWER3
+ 	# movia at, A4
+ 	# beq r13, at, DRAWANSWER4
+ 	# movia at, A5
+ 	# beq r13, at, DRAWANSWER5
+ 	# movia at, A6
+ 	# beq r13, at, DRAWANSWER6
+ 	# movia at, A7
+ 	# beq r13, at, DRAWANSWER7
+ 	# movia at, A8
+ 	# beq r13, at, DRAWANSWER8
+ 	# movia at, A9
+ 	# beq r13, at, DRAWANSWER9
+ 	# movia at, A10
+ 	# beq r13, at, DRAWANSWER10
+ 	# movia at, A11
+ 	# beq r13, at, DRAWANSWER11
+ 	# movia at, A12
+ 	# beq r13, at, DRAWANSWER12
+ 	# movia at, A13
+ 	# beq r13, at, DRAWANSWER13
+ 	# movia at, A14
+ 	# beq r13, at, DRAWANSWER14
+ 	# movia at, A15
+ 	# beq r13, at, DRAWANSWER15
+ # LOOP_END: 
+ 	##reset state of interrupt (r16) to 0
+	##clear edge capture of button to avoid unecessary interrupts
+ 	# mov r16, r0
+	# movia r12, 0xFFFFFFFF
+ 	# stwio r12, 12(r10)
+ 	##enable external processor interrupts
+	# movi at, IRQ_DEV
+	# wrctl ctl3, at
+ 	# movia at, 0x1
+ 	# wrctl ctl0, at
+	
+	
+ # br LOOP_START
 
 ###############################################################################
-# Subroutine that initializes all devices used in the project and extracts samples from 16 bit wav file
+# Subroutine that initializes all devices used in the project
 ###############################################################################
-extractSamples:
-	#get starting location of sound file
-	movia r8, WAV_FILE
-	#get location of newsound
-	movia r12, TETRIS
-	#move r8 to data section of sound file
-	addi r8, r8, 44
-
-	#each sample, is 2 bytes; therefore, total increments is 940,800 bytes/2 bytes
-	movia r11, 470400
-	#movia r11, 663399
-	#counter keeps tracks of bytes serviced
-	mov r10, r0
-EXTRACT:
-	#end of data reached when counter (r10) > size of data (470400)
-	bgt r10, r11, DONE_PARSE
-	#get first 2 bytes
-	ldh at, 0(r8)
-	#go to next 2 bytes
-	addi r8, r8, 2
-	#scale halfword to word
-	slli at, at, 16
-	#store this word into NEWSOUND
-	stw at, 0(r12)
-	#go to next word
-	addi r12, r12, 4
-	#increment counter
-	addi r10, r10, 1
-br EXTRACT
-
-DONE_PARSE:
-ret
-
  init: 
 	movia r8, ADDR_VGA 
  	movia r9, ADDR_CHAR 
@@ -208,6 +278,10 @@ ret
 	# Set ALL HEX displays to 0
 	call clearHex0to3
 	call clearHex4to5
+	
+	# Set all LEDS to 0
+	movia r12, ADDR_REDLEDS
+	stwio r0, 0(r12)
 	
 	mov r16, r0
  	# Clear edge capture of button to avoid unecessary interrupts
@@ -240,70 +314,7 @@ ret
 	stw r0, 0(r12)
 	call clearHex0to3
 	call drawMainMenu
-	#initialise audio codec, poll for some time to play main theme before exiting
-	#play main theme for a few seconds
-	call playMainTheme
 br LOOP_END
-
-playMainTheme:
-	#save any used register on stack
-	addi sp, sp, -28
-	stw ra, 0(sp)
-	stw r8, 4(sp)
-	stw r9, 8(sp)
-	stw r10, 12(sp)
-	stw r11, 16(sp)
-	stw r12, 20(sp)
-	stw r13, 24(sp)
-
-	#use r8 for audio codec address
-	movia r8, AUDIO_CODEC
-	#r9 for temp var #1
-	mov r9, r0
-	#r10 for temp var #2
-	mov r10, r0
-	#r11 for length of sound
-	movia r11, SOUND_LENGTH
-	#r12 for temp var #3
-	mov r12, r0
-	#r13 for location of sound samples
-	movia r13, TETRIS
-
-	#use at as counter for sound file
-	mov at, r0
-
-POLL_AUDIO_CODEC:
-	#keep polling for write space if full
-	ldwio r9, 4(r8)
-	andhi r10, r9, 0xff
-	beq r10, r0, POLL_AUDIO_CODEC
-	#stop playing audio when over
-	bgt r10, r11, DONE_PLAYING
-
-	ldw r12, 0(r13)
-	stwio r12, 8(r8)
-	stwio r12, 12(r8)
-	
-	addi r13, r13, 4
-	#increment at
-	addi at, at, 1
-	
-	#bne r30, r21, SERVE_AUDIO_CODEC
-	
-br POLL_AUDIO_CODEC
-
-DONE_PLAYING:
-	#load from stack
-	ldw ra, 0(sp)
-	ldw r8, 4(sp)
-	ldw r9, 8(sp)
-	ldw r10, 12(sp)
-	ldw r11, 16(sp)
-	ldw r12, 20(sp)
-	ldw r13, 24(sp)
-	addi sp, sp, 28
-ret
-
  
  DRAWQ1:
  	#clear screen
@@ -318,6 +329,9 @@ ret
  	call drawQuestion1
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
+	
  br LOOP_END
 
  DRAWANSWER1:
@@ -331,6 +345,8 @@ ret
  	call drawQuestion2
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
  DRAWANSWER2:
@@ -344,6 +360,8 @@ ret
  	call drawQuestion3
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
  DRAWANSWER3:
@@ -357,6 +375,8 @@ ret
  	call drawQuestion4
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
  DRAWANSWER4:
@@ -370,6 +390,8 @@ ret
  	call drawQuestion5
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
 DRAWANSWER5:
@@ -383,6 +405,8 @@ DRAWANSWER5:
  	call drawQuestion6
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
 DRAWANSWER6:
@@ -396,6 +420,8 @@ DRAWANSWER6:
  	call drawQuestion7
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
 DRAWANSWER7:
@@ -409,6 +435,8 @@ DRAWANSWER7:
  	call drawQuestion8
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
 DRAWANSWER8:
@@ -422,6 +450,8 @@ DRAWANSWER8:
  	call drawQuestion9
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
  DRAWANSWER9:
@@ -435,6 +465,8 @@ DRAWANSWER8:
  	call drawQuestion10
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
 DRAWANSWER10:
@@ -448,6 +480,8 @@ DRAWANSWER10:
  	call drawQuestion11
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
 DRAWANSWER11:
@@ -461,6 +495,8 @@ DRAWANSWER11:
  	call drawQuestion12
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
 DRAWANSWER12:
@@ -474,6 +510,8 @@ DRAWANSWER12:
  	call drawQuestion13
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
 DRAWANSWER13:
@@ -487,6 +525,8 @@ DRAWANSWER13:
  	call drawQuestion14
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
 DRAWANSWER14:
@@ -500,6 +540,8 @@ DRAWANSWER14:
  	call drawQuestion15
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
+	
+	call initTimedQuestion 
  br LOOP_END
 
 
@@ -582,7 +624,7 @@ br EXIT
 
 QUESTION1:
 	#store the new state
-	movia r13, A1 #
+	movia r13, A1 
 br EXIT
  
 ANSWER1:
@@ -1233,3 +1275,68 @@ HEX4TO5_REST:
 	beq r13, et, WAIT15
 	#pray for this not to happen 
 br LOOP_END
+
+######################################################################
+# Void subroutine that decrements the counter dictated by LEDs
+# Does not accept parameters but will clobber registers 'r4' - 'r7'
+######################################################################
+updateLEDS:
+    addi sp, sp, -16
+	stw ra, 0(sp)
+	stw r16, 4(sp)
+    stw r17, 8(sp)
+    stw r18, 12(sp)
+	
+    # Update counter
+    subi r21, r21, 1
+    
+    # Update LEDs
+    movui r16, 1
+    sll r16, r16, r21
+    movia r17, ADDR_REDLEDS
+	ldwio r18, 0(r17)
+	xor r16, r16, r18
+    stwio r16, 0(r17)
+    
+    ldw ra, 0(sp)
+	ldw r16, 4(sp)
+	ldw r17, 8(sp)
+	ldw r18, 12(sp)
+	addi sp, sp, 16   
+ret
+
+######################################################################
+# Void subroutine that prepares the LEDs/Timer for tracking time elapsed
+# Does not accept parameters but will clobber registers 'r4' - 'r7'
+######################################################################
+initTimedQuestion:
+    addi sp, sp, -12
+	stw ra, 0(sp)
+	stw r16, 4(sp)
+    stw r17, 8(sp)
+
+	# Set LEDs counter to 9
+    movia r17, 0x3FF
+    movia r16, ADDR_REDLEDS
+    stwio r17, 0(r16)
+    movui r21, 10	
+    
+    # Set period of timer
+	movia r16, TWO_SECONDS
+	andi r17, r16, 0x0000FFFF
+	stwio r17, 8(r11) # Low period
+	movia r17, 0xFFFF0000
+	and r16, r16, r17
+	srli r16, r16, 16 
+	stwio r16, 12(r11) # High period
+	
+	# Start timer, no continous, no interrupts
+	movui r12, 0x4
+	stwio r12, 4(r11)
+    movui r20, 1
+
+	ldw ra, 0(sp)
+	ldw r16, 4(sp)
+	ldw r17, 8(sp)
+	addi sp, sp, 12
+ret

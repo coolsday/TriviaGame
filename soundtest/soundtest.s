@@ -4,6 +4,7 @@
 ###################################
 .global _start
 
+.include "vga_questions.s"
 #include wav file
 SOUND:
 .incbin "test3.wav" #tetris
@@ -26,6 +27,9 @@ NEWSOUND:
 #global constants for stuff used
 .equ VGA_ADDRESS, 0x80000000
 .equ AUDIO_CODEC, 0xFF203040
+
+#global constants for stuff used
+.equ VGA_ADDRESS, 0x80000000
 
 _start:
 	#get location of audio codec
