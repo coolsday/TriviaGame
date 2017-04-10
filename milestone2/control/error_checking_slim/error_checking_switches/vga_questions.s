@@ -2887,7 +2887,6 @@ drawQuestion13:
 	mov r5, r2
 	call draw_Y
 
-	
 	movia r5, QBOX_LINE4_POS
 	add r5, r5, r8
 	call draw_C
@@ -2933,6 +2932,30 @@ drawQuestion13:
 	call draw_N
     mov r5, r2
     call draw_QuestionMark
+	
+	movia r5, QBOX_LINE5_POS
+	add r5, r5, r8
+	call draw_LeftBracket
+	mov r5, r2
+	call draw_W
+	mov r5, r2
+	call draw_I
+    mov r5, r2
+	call draw_T
+	mov r5, r2
+	call draw_H
+    mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_O
+	mov r5, r2
+	call draw_N
+	mov r5, r2
+	call draw_E
+    mov r5, r2
+	call draw_S
+	mov r5, r2
+	call draw_RightBracket
 	
 	# Answers
 	movui r4, WHITE
@@ -3118,13 +3141,13 @@ drawQuestion14:
 	
 	call draw_R
 	mov r5, r2
-	call draw_9
+	call draw_7
 	mov r5, r2
 	call draw_Comma
 	mov r5, r2
 	call draw_R
 	mov r5, r2
-	call draw_7
+	call draw_9
 	mov r5, r2
 	call draw_Comma
 	mov r5, r2

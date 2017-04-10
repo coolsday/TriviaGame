@@ -719,5 +719,5 @@ drawIncorrectAnswer:
 	
 	ldw ra, 0(sp)
 	ldw r16, 4(sp)
-	addi sp, sp, 4
+	addi sp, sp, 8
 ret
