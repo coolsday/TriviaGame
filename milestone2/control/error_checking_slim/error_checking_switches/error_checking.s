@@ -107,11 +107,7 @@ TETRIS:
  	beq r16, r0, LOOP_START
  	#disable external interrupts before drawing
  	wrctl ctl0, r0
-<<<<<<< HEAD
-	wrctl ctl3, r0 #######################################################################
-=======
 	wrctl ctl3, r0 
->>>>>>> added working soundfiles
  	#draw the screen according to state value
  	movia at, START
 	beq r13, at, DRAWMENU
@@ -314,19 +310,13 @@ ret
  	call clearScreen
  	#loading screen
  	call drawLoadingScreen
-<<<<<<< HEAD
-=======
 	movia r4, FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  	#clear screen
  	call clearScreen
  	#display Q1
  	call drawQuestion1
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -339,10 +329,7 @@ ret
  	call clearScreen
  	#display Q2
  	call drawQuestion2
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -355,10 +342,7 @@ ret
  	call clearScreen
  	#display Q3
  	call drawQuestion3
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -371,10 +355,7 @@ ret
  	call clearScreen
  	#display Q4
  	call drawQuestion4
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -387,10 +368,7 @@ ret
  	call clearScreen
  	#display Q5
  	call drawQuestion5
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -403,10 +381,7 @@ DRAWANSWER5:
  	call clearScreen
  	#display Q6
  	call drawQuestion6
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -419,10 +394,7 @@ DRAWANSWER6:
  	call clearScreen
  	#display Q7
  	call drawQuestion7
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -435,10 +407,7 @@ DRAWANSWER7:
  	call clearScreen
  	#display Q8
  	call drawQuestion8
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -451,10 +420,7 @@ DRAWANSWER8:
  	call clearScreen
  	#display Q9
  	call drawQuestion9
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -467,10 +433,7 @@ DRAWANSWER8:
  	call clearScreen
  	#display Q10
  	call drawQuestion10
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -483,10 +446,7 @@ DRAWANSWER10:
  	call clearScreen
  	#display Q11
  	call drawQuestion11
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -499,10 +459,7 @@ DRAWANSWER11:
  	call clearScreen
  	#display Q12
  	call drawQuestion12
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -515,10 +472,7 @@ DRAWANSWER12:
  	call clearScreen
  	#display Q13
  	call drawQuestion13
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -531,10 +485,7 @@ DRAWANSWER13:
  	call clearScreen
  	#display Q14
  	call drawQuestion14
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -547,10 +498,7 @@ DRAWANSWER14:
  	call clearScreen
  	#display Q15
  	call drawQuestion15
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -564,10 +512,7 @@ DRAWANSWER14:
  	call clearScreen
  	#display Game Over Screen
  	call drawGameOver
-<<<<<<< HEAD
-=======
 	movia r4, POINT_FIVE_SECONDS
->>>>>>> added working soundfiles
 	call timerOnePoll
  br LOOP_END
 
@@ -1043,11 +988,6 @@ WAIT15:
 ret
 
 
-<<<<<<< HEAD
- 
- timerOnePoll:
-	#start timer, no continous, no interrupts
-=======
 ######################################################################
 # Void subroutine that polls the timer for a certain amount of time
 # defined by the # of clock cycles that is passed into r4
@@ -1066,7 +1006,6 @@ ret
 	stwio r16, 12(r11) # High period
 	
 	# Start timer, no continous, no interrupts
->>>>>>> added working soundfiles
 	movui r12, 0x4
 	stwio r12, 4(r11)
  POLL:
