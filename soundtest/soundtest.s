@@ -7,19 +7,20 @@
 #include wav file
 SOUND:
 #.incbin "test3.wav" #tetris
-.incbin "mainTheme.wav"
+#.incbin "mainTheme.wav"
+.incbin "incorrect.wav"
 
 NEWSOUND:
 .align 2
 #.skip 2653596
 #.skip 1881600 #total data * 2
-.skip 2219340
+.skip 21814384
 
 #global constants for stuff used
 .equ AUDIO_CODEC, 0xFF203040
 #.equ SOUND_LENGTH, 663399
 #.equ SOUND_LENGTH, 470400 #total data/2 #tetris
-.equ SOUND_LENGTH, 554835
+.equ SOUND_LENGTH, 5453596
 
 _start:
 	#get location of audio codec
@@ -62,8 +63,7 @@ br LOOP
 # 11100 -> 28
 DONE_PARSE:
 	#move r12 back to start of newsound
-	movia at, 2219340
-	sub r12, r12, at 
+	movia r12, NEWSOUND
 	#use r10 as counter for sound file
 	mov r10, r0
 	#activate write interrupts for audio codec

@@ -4,8 +4,12 @@ NUM_A_CORRECT: .word 0
 NUM_A_INCORRECT: .word 0
 HIGH_SCORE: .word 0
 WAV_FILE: .incbin "test3.wav"
-WAV_FILE2: .incbin "mainTheme.wav" 
+WAV_FILE2: .incbin "mainTheme.wav"
+WAV_FILE3: .incbin "endTheme.wav"
+WAV_FILE4: .incbin "correct.wav"
+WAV_FILE5: .incbin "incorrect.wav"
 
+#data for audio is stored here
 TETRIS: 
 	.align 2
 	.skip 1881600
@@ -13,6 +17,18 @@ TETRIS:
 MAINTHEME:
 	.align 2
 	.skip 3994812
+
+ENDTHEME:
+	.align 2
+	.skip 21814384
+
+CORRECTTHEME:
+	.align 2
+	.skip 244760
+
+INCORRECTTHEME:
+	.align 2
+	.skip 185016
 
 .section .text
 #################################################################################################################################### 
@@ -71,9 +87,13 @@ MAINTHEME:
  	#sound length values
  	.equ SOUND_LENGTH_TETRIS, 470400 #tetris
 	.equ SOUND_LENGTH_MAIN, 554835
+	.equ SOUND_LENGTH_END, 5453596
+	.equ SOUND_LENGTH_CORRECT, 61190
+	.equ SOUND_LENGTH_INCORRECT, 46254
 	
 	# Constants for establishing timer periods
 	.equ POINT_FIVE_SECONDS, 50000000 
+	.equ ONE_SECOND, 100000000 
  	.equ TWO_SECONDS, 200000000 
 	.equ FIVE_SECONDS, 500000000 
 	
@@ -105,6 +125,9 @@ MAINTHEME:
 	#extract 32 bit samples from wav file
  	call extractSamplesTetris
 	call extractSamplesMain
+	call extractSamplesEnd
+	call extractSamplesCorrect
+	call extractSamplesIncorrect
 	#initialise pointers to device address and constants 
  	call init
 	#clear screen initially
@@ -116,8 +139,8 @@ MAINTHEME:
 	#r13 holds the initial state of the transition which is the menu or starting screen
 	movia r13, START
 	#enable processor interrupts
-	movia at, 0x1
-	wrctl ctl0, at 
+	movia r12, 0x1
+	wrctl ctl0, r12 
 	#MAIN PROGRAM
 	
 LOOP_START:
@@ -225,51 +248,52 @@ LOOP_MID:
  	wrctl ctl0, r0
 	wrctl ctl3, r0 
  	#draw the screen according to state value
- 	movia at, START
-	beq r13, at, DRAWMENU
-	movia at, Q1
- 	beq r13, at, DRAWQ1
- 	movia at, A1
- 	beq r13, at, DRAWANSWER1
- 	movia at, A2
- 	beq r13, at, DRAWANSWER2 
- 	movia at, A3
- 	beq r13, at, DRAWANSWER3
- 	movia at, A4
- 	beq r13, at, DRAWANSWER4
- 	movia at, A5
- 	beq r13, at, DRAWANSWER5
- 	movia at, A6
- 	beq r13, at, DRAWANSWER6
- 	movia at, A7
- 	beq r13, at, DRAWANSWER7
- 	movia at, A8
- 	beq r13, at, DRAWANSWER8
- 	movia at, A9
- 	beq r13, at, DRAWANSWER9
- 	movia at, A10
- 	beq r13, at, DRAWANSWER10
- 	movia at, A11
- 	beq r13, at, DRAWANSWER11
- 	movia at, A12
- 	beq r13, at, DRAWANSWER12
- 	movia at, A13
- 	beq r13, at, DRAWANSWER13
- 	movia at, A14
- 	beq r13, at, DRAWANSWER14
- 	movia at, A15
- 	beq r13, at, DRAWANSWER15
+ 	movia r12, START
+	beq r13, r12, DRAWMENU
+	movia r12, Q1
+ 	beq r13, r12, DRAWQ1
+ 	movia r12, A1
+ 	beq r13, r12, DRAWANSWER1
+ 	movia r12, A2
+ 	beq r13, r12, DRAWANSWER2 
+ 	movia r12, A3
+ 	beq r13, r12, DRAWANSWER3
+ 	movia r12, A4
+ 	beq r13, r12, DRAWANSWER4
+ 	movia r12, A5
+ 	beq r13, r12, DRAWANSWER5
+ 	movia r12, A6
+ 	beq r13, r12, DRAWANSWER6
+ 	movia r12, A7
+ 	beq r13, r12, DRAWANSWER7
+ 	movia r12, A8
+ 	beq r13, r12, DRAWANSWER8
+ 	movia r12, A9
+ 	beq r13, r12, DRAWANSWER9
+ 	movia r12, A10
+ 	beq r13, r12, DRAWANSWER10
+ 	movia r12, A11
+ 	beq r13, r12, DRAWANSWER11
+ 	movia r12, A12
+ 	beq r13, r12, DRAWANSWER12
+ 	movia r12, A13
+ 	beq r13, r12, DRAWANSWER13
+ 	movia r12, A14
+ 	beq r13, r12, DRAWANSWER14
+ 	movia r12, A15
+ 	beq r13, r12, DRAWANSWER15
  LOOP_END: 
  	#reset state of interrupt (r16) to 0
 	#clear edge capture of button to avoid unecessary interrupts
  	mov r16, r0
 	movia r12, 0xFFFFFFFF
  	stwio r12, 12(r10)
+GAME_OVER_BRANCH:
  	#enable external processor interrupts
-	movi at, IRQ_DEV
-	wrctl ctl3, at
- 	movia at, 0x1
- 	wrctl ctl0, at
+	movi r12, IRQ_DEV
+	wrctl ctl3, r12
+ 	movia r12, 0x1
+ 	wrctl ctl0, r12
 	
  br LOOP_START	
 
@@ -577,7 +601,69 @@ DRAWANSWER14:
  	call drawGameOver
 	movia r4, POINT_FIVE_SECONDS
 	call timerOnePoll
- br LOOP_END
+    
+	mov r16, r0
+	
+	#save some variables on stack to use
+	addi sp, sp, -20
+	stw r8, 0(sp)
+	stw r9, 4(sp)
+	stw r10, 8(sp)
+	stw r11, 12(sp)
+	stw r7, 16(sp)
+
+	#get location of audio codec
+	movia r8, AUDIO_CODEC
+	#get length of song
+	movia r11, SOUND_LENGTH_END
+	#get location of sound data
+	movia r7, ENDTHEME
+	
+	#play end theme music until user presses button to transition to menu
+	#enable external interrupts
+	movia r10, BUTTON
+	movia r12, 0xFFFFFFFF
+ 	stwio r12, 12(r10)
+	movui r12, 1
+	wrctl ctl0, r12
+	movui r12, IRQ_DEV
+	wrctl ctl3, r12
+	
+	#initialise r10 to 0
+	mov r22, r0
+	
+	GAMEOVER_THEME:
+		#keep polling for free write space in audio fifo
+		ldwio r12, 4(r8)
+		andhi r9, r12, 0xff
+		beq r9, r0, GAMEOVER_THEME
+		#stop music and branch to menu if button pressed
+		movui r12, 1
+		beq r16, r12, GAMEOVER_THEME_END
+		#stop playing audio when over (time limit reached)
+		bgtu r22, r11, GAMEOVER_THEME_END
+
+		ldw r12, 0(r7)
+		stwio r12, 8(r8)
+		stwio r12, 12(r8)
+	
+		addi r7, r7, 4
+		#increment at
+		addi r22, r22, 1
+	
+	br GAMEOVER_THEME 
+
+ GAMEOVER_THEME_END:
+ 	#disable external interrupts
+ 	wrctl ctl0, r0
+ 	#reload from stack
+ 	ldw r8, 0(sp)
+ 	ldw r9, 4(sp)
+ 	ldw r10, 8(sp)
+ 	ldw r11, 12(sp)
+ 	ldw r7, 16(sp)
+ 	addi sp, sp, 20
+br GAME_OVER_BRANCH
 
 
  ##############################################
@@ -749,7 +835,7 @@ drawAnswer1:
 WAIT1:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -770,7 +856,7 @@ drawAnswer2:
 WAIT2:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -791,7 +877,7 @@ drawAnswer3:
 WAIT3:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -812,7 +898,7 @@ drawAnswer4:
 WAIT4:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -833,7 +919,7 @@ drawAnswer5:
 WAIT5:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -854,7 +940,7 @@ drawAnswer6:
 WAIT6:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -875,7 +961,7 @@ drawAnswer7:
 WAIT7:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -896,7 +982,7 @@ drawAnswer8:
 WAIT8:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -917,7 +1003,7 @@ drawAnswer9:
 WAIT9:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -938,7 +1024,7 @@ drawAnswer10:
 WAIT10:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -959,7 +1045,7 @@ drawAnswer11:
 WAIT11:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -980,7 +1066,7 @@ drawAnswer12:
 WAIT12:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -1001,7 +1087,7 @@ drawAnswer13:
 WAIT13:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -1022,7 +1108,7 @@ drawAnswer14:
 WAIT14:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -1043,7 +1129,7 @@ drawAnswer15:
 WAIT15:
 	#only display buffer screen for a short period of time (2 seconds)
 	#display this screen for 2 seconds
-	movia r4, TWO_SECONDS
+	movia r4, ONE_SECOND
 	call timerOnePoll
 	
 	ldw ra, 0(sp)
@@ -1131,6 +1217,9 @@ HEX2TO3_REST:
 	
 	# Draw screen for incorrect answer
 	call drawIncorrectAnswer
+
+	#play incorrect audio
+	call playIncorrect
 
 	ldw ra, 0(sp)
 	ldw r16, 4(sp)
@@ -1256,6 +1345,9 @@ HEX4TO5_REST:
 	# Draw screen for correct answer
 	call drawCorrectAnswer
 
+	#play correct audio
+	call playCorrect
+
 	ldw ra, 0(sp)
 	ldw r16, 4(sp)
 	ldw r17, 8(sp)
@@ -1363,7 +1455,7 @@ initTimedQuestion:
 ret
 
 ###############################################################################
-# Subroutine that initializes all devices used in the project and extracts samples from 16 bit wav file
+# Subroutine that extracts samples from 16 bit wav file
 ###############################################################################
 extractSamplesTetris:
 	#get starting location of sound file
@@ -1382,13 +1474,13 @@ EXTRACT_TETRIS:
 	#end of data reached when counter (r10) > size of data (470400)
 	bgt r10, r11, DONE_PARSE_TETRIS
 	#get first 2 bytes
-	ldh at, 0(r8)
+	ldh r22, 0(r8)
 	#go to next 2 bytes
 	addi r8, r8, 2
 	#scale halfword to word
-	slli at, at, 16
+	slli r22, r22, 13
 	#store this word into NEWSOUND
-	stw at, 0(r12)
+	stw r22, 0(r12)
 	#go to next word
 	addi r12, r12, 4
 	#increment counter
@@ -1415,13 +1507,13 @@ EXTRACT_MAIN:
 	#end of data reached when counter (r10) > size of data (470400)
 	bgt r10, r11, DONE_PARSE_MAIN
 	#get first 2 bytes
-	ldh at, 0(r8)
+	ldh r22, 0(r8)
 	#go to next 2 bytes
 	addi r8, r8, 2
 	#scale halfword to word
-	slli at, at, 16
+	slli r22, r22, 15
 	#store this word into NEWSOUND
-	stw at, 0(r12)
+	stw r22, 0(r12)
 	#go to next word
 	addi r12, r12, 4
 	#increment counter
@@ -1429,6 +1521,105 @@ EXTRACT_MAIN:
 br EXTRACT_MAIN
 
 DONE_PARSE_MAIN:
+ret
+
+extractSamplesEnd:
+	#get starting location of sound file
+	movia r8, WAV_FILE3
+	#get location of newsound
+	movia r12, ENDTHEME
+	#move r8 to data section of sound file
+	addi r8, r8, 44
+
+	#each sample, is 2 bytes; therefore, total increments is 940,800 bytes/2 bytes
+	movia r11, SOUND_LENGTH_END
+	#movia r11, 663399
+	#counter keeps tracks of bytes serviced
+	mov r10, r0
+EXTRACT_END:
+	#end of data reached when counter (r10) > size of data (470400)
+	bgt r10, r11, DONE_PARSE_END
+	#get first 2 bytes
+	ldh r22, 0(r8)
+	#go to next 2 bytes
+	addi r8, r8, 2
+	#scale halfword to word
+	slli r22, r22, 14
+	#store this word into NEWSOUND
+	stw r22, 0(r12)
+	#go to next word
+	addi r12, r12, 4
+	#increment counter
+	addi r10, r10, 1
+br EXTRACT_END
+
+DONE_PARSE_END:
+ret
+
+extractSamplesCorrect:
+	#get starting location of sound file
+	movia r8, WAV_FILE4
+	#get location of newsound
+	movia r12, CORRECTTHEME
+	#move r8 to data section of sound file
+	addi r8, r8, 44
+
+	#each sample, is 2 bytes; therefore, total increments is 940,800 bytes/2 bytes
+	movia r11, SOUND_LENGTH_CORRECT
+	#movia r11, 663399
+	#counter keeps tracks of bytes serviced
+	mov r10, r0
+EXTRACT_CORRECT:
+	#end of data reached when counter (r10) > size of data (470400)
+	bgt r10, r11, DONE_PARSE_CORRECT
+	#get first 2 bytes
+	ldh r22, 0(r8)
+	#go to next 2 bytes
+	addi r8, r8, 2
+	#scale halfword to word
+	slli r22, r22, 13
+	#store this word into NEWSOUND
+	stw r22, 0(r12)
+	#go to next word
+	addi r12, r12, 4
+	#increment counter
+	addi r10, r10, 1
+br EXTRACT_CORRECT
+
+DONE_PARSE_CORRECT:
+ret
+
+extractSamplesIncorrect:
+	#get starting location of sound file
+	movia r8, WAV_FILE5
+	#get location of newsound
+	movia r12, INCORRECTTHEME
+	#move r8 to data section of sound file
+	addi r8, r8, 44
+
+	#each sample, is 2 bytes; therefore, total increments is 940,800 bytes/2 bytes
+	movia r11, SOUND_LENGTH_INCORRECT
+	#movia r11, 663399
+	#counter keeps tracks of bytes serviced
+	mov r10, r0
+EXTRACT_INCORRECT:
+	#end of data reached when counter (r10) > size of data (470400)
+	bgt r10, r11, DONE_PARSE_INCORRECT
+	#get first 2 bytes
+	ldh r22, 0(r8)
+	#go to next 2 bytes
+	addi r8, r8, 2
+	#scale halfword to word
+	slli r22, r22, 13
+	#store this word into NEWSOUND
+	stw r22, 0(r12)
+	#go to next word
+	addi r12, r12, 4
+	#increment counter
+	addi r10, r10, 1
+br EXTRACT_INCORRECT
+
+DONE_PARSE_INCORRECT:
 ret
 
 playTetris:
@@ -1456,7 +1647,7 @@ playTetris:
 	movia r13, TETRIS
 
 	#use at as counter for sound file
-	mov at, r0
+	mov r22, r0
 
 POLL_AUDIO_CODEC_TETRIS:
 	#keep polling for write space if full
@@ -1464,7 +1655,7 @@ POLL_AUDIO_CODEC_TETRIS:
 	andhi r10, r9, 0xff
 	beq r10, r0, POLL_AUDIO_CODEC_TETRIS
 	#stop playing audio when over
-	bgt at, r11, DONE_PLAYING_TETRIS
+	bgt r22, r11, DONE_PLAYING_TETRIS
 
 	ldw r12, 0(r13)
 	stwio r12, 8(r8)
@@ -1472,13 +1663,129 @@ POLL_AUDIO_CODEC_TETRIS:
 	
 	addi r13, r13, 4
 	#increment at
-	addi at, at, 1
+	addi r22, r22, 1
 	
 	#bne r30, r21, SERVE_AUDIO_CODEC
 	
 br POLL_AUDIO_CODEC_TETRIS
 
 DONE_PLAYING_TETRIS:
+	#load from stack
+	ldw ra, 0(sp)
+	ldw r8, 4(sp)
+	ldw r9, 8(sp)
+	ldw r10, 12(sp)
+	ldw r11, 16(sp)
+	ldw r12, 20(sp)
+	ldw r13, 24(sp)
+	addi sp, sp, 28
+ret
+
+playIncorrect:
+	#save any used register on stack
+	addi sp, sp, -28
+	stw ra, 0(sp)
+	stw r8, 4(sp)
+	stw r9, 8(sp)
+	stw r10, 12(sp)
+	stw r11, 16(sp)
+	stw r12, 20(sp)
+	stw r13, 24(sp)
+
+	#use r8 for audio codec address
+	movia r8, AUDIO_CODEC
+	#r9 for temp var #1
+	mov r9, r0
+	#r10 for temp var #2
+	mov r10, r0
+	#r11 for length of sound
+	movia r11, SOUND_LENGTH_INCORRECT
+	#r12 for temp var #3
+	mov r12, r0
+	#r13 for location of sound samples
+	movia r13, INCORRECTTHEME
+
+	#use at as counter for sound file
+	mov r22, r0
+
+POLL_AUDIO_CODEC_INCORRECT:
+	#keep polling for write space if full
+	ldwio r9, 4(r8)
+	andhi r10, r9, 0xff
+	beq r10, r0, POLL_AUDIO_CODEC_INCORRECT
+	#stop playing audio when over
+	bgt r22, r11, DONE_PLAYING_INCORRECT
+
+	ldw r12, 0(r13)
+	stwio r12, 8(r8)
+	stwio r12, 12(r8)
+	
+	addi r13, r13, 4
+	#increment at
+	addi r22, r22, 1
+	
+	#bne r30, r21, SERVE_AUDIO_CODEC
+	
+br POLL_AUDIO_CODEC_INCORRECT
+
+DONE_PLAYING_INCORRECT:
+	#load from stack
+	ldw ra, 0(sp)
+	ldw r8, 4(sp)
+	ldw r9, 8(sp)
+	ldw r10, 12(sp)
+	ldw r11, 16(sp)
+	ldw r12, 20(sp)
+	ldw r13, 24(sp)
+	addi sp, sp, 28
+ret
+
+playCorrect:
+	#save any used register on stack
+	addi sp, sp, -28
+	stw ra, 0(sp)
+	stw r8, 4(sp)
+	stw r9, 8(sp)
+	stw r10, 12(sp)
+	stw r11, 16(sp)
+	stw r12, 20(sp)
+	stw r13, 24(sp)
+
+	#use r8 for audio codec address
+	movia r8, AUDIO_CODEC
+	#r9 for temp var #1
+	mov r9, r0
+	#r10 for temp var #2
+	mov r10, r0
+	#r11 for length of sound
+	movia r11, SOUND_LENGTH_CORRECT
+	#r12 for temp var #3
+	mov r12, r0
+	#r13 for location of sound samples
+	movia r13, CORRECTTHEME
+
+	#use at as counter for sound file
+	mov r22, r0
+
+POLL_AUDIO_CODEC_CORRECT:
+	#keep polling for write space if full
+	ldwio r9, 4(r8)
+	andhi r10, r9, 0xff
+	beq r10, r0, POLL_AUDIO_CODEC_CORRECT
+	#stop playing audio when over
+	bgt r22, r11, DONE_PLAYING_CORRECT
+
+	ldw r12, 0(r13)
+	stwio r12, 8(r8)
+	stwio r12, 12(r8)
+	
+	addi r13, r13, 4
+	#increment at
+	addi r22, r22, 1
+	
+br POLL_AUDIO_CODEC_CORRECT
+
+DONE_PLAYING_CORRECT:
 	#load from stack
 	ldw ra, 0(sp)
 	ldw r8, 4(sp)
