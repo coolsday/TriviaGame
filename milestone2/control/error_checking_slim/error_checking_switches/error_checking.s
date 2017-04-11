@@ -3,10 +3,16 @@
 NUM_A_CORRECT: .word 0
 NUM_A_INCORRECT: .word 0
 HIGH_SCORE: .word 0
-WAV_FILE: .incbin "test3.wav" 
+WAV_FILE: .incbin "test3.wav"
+WAV_FILE2: .incbin "mainTheme.wav" 
+
 TETRIS: 
 	.align 2
-	.skip 1881600 
+	.skip 1881600
+	
+MAINTHEME:
+	.align 2
+	.skip 3994812
 
 .section .text
 #################################################################################################################################### 
@@ -36,6 +42,7 @@ TETRIS:
 	#r20 - stores a flag variable that dictates if we are in a timed question
     #r21 - counter that dictates how many LEDs are lit
 	#r22 - is another temporary register
+	#r23 - used to store main theme data
 	
 	
 ####################################################################################################################################
@@ -62,7 +69,8 @@ TETRIS:
 	.equ AUDIO_CODEC, 0xFF203040
 
  	#sound length values
- 	.equ SOUND_LENGTH, 470400 #tetris 
+ 	.equ SOUND_LENGTH_TETRIS, 470400 #tetris
+	.equ SOUND_LENGTH_MAIN, 554835
 	
 	# Constants for establishing timer periods
 	.equ POINT_FIVE_SECONDS, 50000000 
@@ -95,7 +103,8 @@ TETRIS:
 
  _start:
 	#extract 32 bit samples from wav file
- 	call extractSamples 
+ 	call extractSamplesTetris
+	call extractSamplesMain
 	#initialise pointers to device address and constants 
  	call init
 	#clear screen initially
@@ -103,7 +112,7 @@ TETRIS:
  	#draw the menu on vga 
  	call drawMainMenu
 	#play main theme
-	call playMainTheme
+	call playTetris
 	#r13 holds the initial state of the transition which is the menu or starting screen
 	movia r13, START
 	#enable processor interrupts
@@ -122,6 +131,52 @@ RE_POLL:
 
 # Polling loop that stops when either a push button interrupt occurs or timer has timed out
 TIMED_Q:
+	
+	#play jeopardy theme here
+	
+	#save any used register on stack
+	addi sp, sp, -20
+	stw ra, 0(sp)
+	stw r8, 4(sp)
+	stw r9, 8(sp)
+	stw r11, 12(sp)
+	stw r12, 16(sp)
+
+	#use r8 for audio codec address
+	movia r8, AUDIO_CODEC
+	#r9 for temp var #1
+	mov r9, r0
+	#r22 for temp var #2
+	mov r22, r0
+	#r11 for length of sound
+	movia r11, SOUND_LENGTH_MAIN
+	#r12 for temp var #3
+	mov r12, r0
+
+	#use at as counter for sound file
+	mov r22, r0
+
+	#keep polling for write space if full
+	ldwio r9, 4(r8)
+	andhi r22, r9, 0xff
+	#if fifo is full, then skip writing samples and continue to LED update
+	beq r22, r0, FIFO_AUDIO_DONE
+
+	#write samples to audio codec
+	ldw r12, 0(r23)
+	stwio r12, 8(r8)
+	stwio r12, 12(r8)
+	addi r23, r23, 4 # Go to next sample
+	
+FIFO_AUDIO_DONE:	
+	#load from stack
+	ldw ra, 0(sp)
+	ldw r8, 4(sp)
+	ldw r9, 8(sp)
+	ldw r11, 12(sp)
+	ldw r12, 16(sp)
+	addi sp, sp, 20
+	
 	ldwio r12, 0(r11)
 	andi r12, r12, 0x1
 	bne r16, r0, LOOP_MID
@@ -132,7 +187,7 @@ TIMED_Q:
 
 	# Reset timeout bit
 	stwio r0, 0(r11)
-	
+
 	call updateLEDS
 
 	# If all the LEDs are not lit then we have ran out of time
@@ -164,6 +219,8 @@ TIMED_REST:
 	beq r16, r0, LOOP_START
 
 LOOP_MID:
+	#restart main theme
+	movia r23, MAINTHEME
 	mov r20, r0  # Temporarily disable timed question functionality
  	wrctl ctl0, r0
 	wrctl ctl3, r0 
@@ -215,63 +272,6 @@ LOOP_MID:
  	wrctl ctl0, at
 	
  br LOOP_START	
-	
- # LOOP_START:
- 	##transition to next state if button pressed or interrupt had happened
- 	# beq r16, r0, LOOP_START
-    ##disable external interrupts before drawing
- # LOOP_MID:
- 	# wrctl ctl0, r0
-	# wrctl ctl3, r0 
- 	##draw the screen according to state value
- 	# movia at, START
-	# beq r13, at, DRAWMENU
-	# movia at, Q1
- 	# beq r13, at, DRAWQ1
- 	# movia at, A1
- 	# beq r13, at, DRAWANSWER1
- 	# movia at, A2
- 	# beq r13, at, DRAWANSWER2 
- 	# movia at, A3
- 	# beq r13, at, DRAWANSWER3
- 	# movia at, A4
- 	# beq r13, at, DRAWANSWER4
- 	# movia at, A5
- 	# beq r13, at, DRAWANSWER5
- 	# movia at, A6
- 	# beq r13, at, DRAWANSWER6
- 	# movia at, A7
- 	# beq r13, at, DRAWANSWER7
- 	# movia at, A8
- 	# beq r13, at, DRAWANSWER8
- 	# movia at, A9
- 	# beq r13, at, DRAWANSWER9
- 	# movia at, A10
- 	# beq r13, at, DRAWANSWER10
- 	# movia at, A11
- 	# beq r13, at, DRAWANSWER11
- 	# movia at, A12
- 	# beq r13, at, DRAWANSWER12
- 	# movia at, A13
- 	# beq r13, at, DRAWANSWER13
- 	# movia at, A14
- 	# beq r13, at, DRAWANSWER14
- 	# movia at, A15
- 	# beq r13, at, DRAWANSWER15
- # LOOP_END: 
- 	##reset state of interrupt (r16) to 0
-	##clear edge capture of button to avoid unecessary interrupts
- 	# mov r16, r0
-	# movia r12, 0xFFFFFFFF
- 	# stwio r12, 12(r10)
- 	##enable external processor interrupts
-	# movi at, IRQ_DEV
-	# wrctl ctl3, at
- 	# movia at, 0x1
- 	# wrctl ctl0, at
-	
-	
- # br LOOP_START
 
 ###############################################################################
 # Subroutine that initializes all devices used in the project
@@ -290,6 +290,9 @@ LOOP_MID:
 	# Set ALL HEX displays to 0
 	call clearHex0to3
 	call clearHex4to5
+	
+	#r13 for location of sound samples
+	movia r23, MAINTHEME
 	
 	# Set all LEDS to 0
 	movia r12, ADDR_REDLEDS
@@ -325,10 +328,13 @@ LOOP_MID:
 	movia r12, NUM_A_CORRECT
 	stw r0, 0(r12)
 	call clearHex0to3
+	# reset the LEDRS
+	movia r12, ADDR_REDLEDS
+	stw r0, 0(r12)
 	call drawMainMenu
 	#initialise audio codec, poll for some time to play main #theme before exiting
 	#play main theme for a few seconds
-	call playMainTheme
+	call playTetris
 br LOOP_END
  
  DRAWQ1:
@@ -1359,7 +1365,7 @@ ret
 ###############################################################################
 # Subroutine that initializes all devices used in the project and extracts samples from 16 bit wav file
 ###############################################################################
-extractSamples:
+extractSamplesTetris:
 	#get starting location of sound file
 	movia r8, WAV_FILE
 	#get location of newsound
@@ -1368,13 +1374,13 @@ extractSamples:
 	addi r8, r8, 44
 
 	#each sample, is 2 bytes; therefore, total increments is 940,800 bytes/2 bytes
-	movia r11, 470400
+	movia r11, SOUND_LENGTH_TETRIS
 	#movia r11, 663399
 	#counter keeps tracks of bytes serviced
 	mov r10, r0
-EXTRACT:
+EXTRACT_TETRIS:
 	#end of data reached when counter (r10) > size of data (470400)
-	bgt r10, r11, DONE_PARSE
+	bgt r10, r11, DONE_PARSE_TETRIS
 	#get first 2 bytes
 	ldh at, 0(r8)
 	#go to next 2 bytes
@@ -1387,12 +1393,45 @@ EXTRACT:
 	addi r12, r12, 4
 	#increment counter
 	addi r10, r10, 1
-br EXTRACT
+br EXTRACT_TETRIS
 
-DONE_PARSE:
+DONE_PARSE_TETRIS:
 ret
 
-playMainTheme:
+extractSamplesMain:
+	#get starting location of sound file
+	movia r8, WAV_FILE2
+	#get location of newsound
+	movia r12, MAINTHEME
+	#move r8 to data section of sound file
+	addi r8, r8, 44
+
+	#each sample, is 2 bytes; therefore, total increments is 940,800 bytes/2 bytes
+	movia r11, SOUND_LENGTH_MAIN
+	#movia r11, 663399
+	#counter keeps tracks of bytes serviced
+	mov r10, r0
+EXTRACT_MAIN:
+	#end of data reached when counter (r10) > size of data (470400)
+	bgt r10, r11, DONE_PARSE_MAIN
+	#get first 2 bytes
+	ldh at, 0(r8)
+	#go to next 2 bytes
+	addi r8, r8, 2
+	#scale halfword to word
+	slli at, at, 16
+	#store this word into NEWSOUND
+	stw at, 0(r12)
+	#go to next word
+	addi r12, r12, 4
+	#increment counter
+	addi r10, r10, 1
+br EXTRACT_MAIN
+
+DONE_PARSE_MAIN:
+ret
+
+playTetris:
 	#save any used register on stack
 	addi sp, sp, -28
 	stw ra, 0(sp)
@@ -1410,7 +1449,7 @@ playMainTheme:
 	#r10 for temp var #2
 	mov r10, r0
 	#r11 for length of sound
-	movia r11, SOUND_LENGTH
+	movia r11, SOUND_LENGTH_TETRIS
 	#r12 for temp var #3
 	mov r12, r0
 	#r13 for location of sound samples
@@ -1419,13 +1458,13 @@ playMainTheme:
 	#use at as counter for sound file
 	mov at, r0
 
-POLL_AUDIO_CODEC:
+POLL_AUDIO_CODEC_TETRIS:
 	#keep polling for write space if full
 	ldwio r9, 4(r8)
 	andhi r10, r9, 0xff
-	beq r10, r0, POLL_AUDIO_CODEC
+	beq r10, r0, POLL_AUDIO_CODEC_TETRIS
 	#stop playing audio when over
-	bgt r10, r11, DONE_PLAYING
+	bgt at, r11, DONE_PLAYING_TETRIS
 
 	ldw r12, 0(r13)
 	stwio r12, 8(r8)
@@ -1437,9 +1476,9 @@ POLL_AUDIO_CODEC:
 	
 	#bne r30, r21, SERVE_AUDIO_CODEC
 	
-br POLL_AUDIO_CODEC
+br POLL_AUDIO_CODEC_TETRIS
 
-DONE_PLAYING:
+DONE_PLAYING_TETRIS:
 	#load from stack
 	ldw ra, 0(sp)
 	ldw r8, 4(sp)

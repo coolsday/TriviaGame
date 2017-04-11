@@ -1,0 +1,12 @@
+-- Thu, March 30 --
+David: Made a testbench program to test out the 7-Segment display, wrote subroutines that can modify any of the HEX values to display a specific number
+Xihai:
+
+-- Fri, March 31 --
+David: Integrated the tested 7-Segment display subroutines into the main project, after resolving several bugs, scoring now displays properly!
+Xihai:
+
+-- Mon, April 03 --
+David: Made a testbench program to test out the Timer/LED devices, wrote subroutines that can set certain LEDs on/off to visually count the time
+David: Integrated the Timer/LED subroutines into the main project, after resolving several bugs, timed questions now function properly!
+Xihai:

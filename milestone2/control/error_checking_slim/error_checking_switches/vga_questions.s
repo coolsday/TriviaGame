@@ -1853,6 +1853,7 @@ drawQuestion8:
 	mov r5, r2
 	addi r5, r5, SPACE
 	
+	movui r4, PINK
 	call draw_I
 	mov r5, r2
 	call draw_E
@@ -1863,6 +1864,7 @@ drawQuestion8:
 	mov r5, r2
 	addi r5, r5, SPACE
 	
+	movui r4, WHITE
 	call draw_F
 	mov r5, r2
 	call draw_L
@@ -1886,17 +1888,9 @@ drawQuestion8:
 	mov r5, r2
 	call draw_1
 	mov r5, r2
-	call draw_0
+	call draw_000
 	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
+	call draw_000
 	mov r5, r2
 	call draw_1
 	mov r5, r2
@@ -1904,48 +1898,19 @@ drawQuestion8:
 	mov r5, r2
 	call draw_1
 	mov r5, r2
-	call draw_0
+	call draw_000
 	mov r5, r2
-	call draw_0
+	call draw_000
 	mov r5, r2
-	call draw_0
+	call draw_000
 	mov r5, r2
-	call draw_0
+	call draw_000
 	mov r5, r2
-	call draw_0
+	call draw_000
 	mov r5, r2
-	call draw_0
+	call draw_000
 	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
-	call draw_0
-	mov r5, r2
+	call draw_000
 	
 	# Answers
 	movui r4, WHITE
@@ -2152,6 +2117,12 @@ drawQuestion9:
 	call draw_CTL
 	mov r5, r2
 	call draw_0
+	mov r5, r2
+	addi r5, r5, SPACE
+	
+	call draw_I
+	mov r5, r2
+	call draw_S
 	mov r5, r2
 	addi r5, r5, SPACE
 	

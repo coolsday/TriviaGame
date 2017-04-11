@@ -4,32 +4,22 @@
 ###################################
 .global _start
 
-.include "vga_questions.s"
 #include wav file
 SOUND:
-.incbin "test3.wav" #tetris
+#.incbin "test3.wav" #tetris
+.incbin "mainTheme.wav"
 
 NEWSOUND:
 .align 2
 #.skip 2653596
-.skip 1881600
+#.skip 1881600 #total data * 2
+.skip 2219340
 
 #global constants for stuff used
 .equ AUDIO_CODEC, 0xFF203040
 #.equ SOUND_LENGTH, 663399
-.equ SOUND_LENGTH, 470400
-
-#our new music storage for 32 bit/sample sound data
-NEWSOUND:
-.align 2
-.skip 266276
-
-#global constants for stuff used
-.equ VGA_ADDRESS, 0x80000000
-.equ AUDIO_CODEC, 0xFF203040
-
-#global constants for stuff used
-.equ VGA_ADDRESS, 0x80000000
+#.equ SOUND_LENGTH, 470400 #total data/2 #tetris
+.equ SOUND_LENGTH, 554835
 
 _start:
 	#get location of audio codec
@@ -44,7 +34,7 @@ _start:
 	addi r8, r8, 44
 
 	#each sample, is 2 bytes; therefore, total increments is 940,800 bytes/2 bytes
-	movia r11, 470400
+	movia r11, SOUND_LENGTH
 	#movia r11, 663399
 	#counter keeps tracks of bytes serviced
 	mov r10, r0
@@ -72,7 +62,7 @@ br LOOP
 # 11100 -> 28
 DONE_PARSE:
 	#move r12 back to start of newsound
-	movia at, 1881600
+	movia at, 2219340
 	sub r12, r12, at 
 	#use r10 as counter for sound file
 	mov r10, r0

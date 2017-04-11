@@ -1,0 +1,57 @@
+	
+ # LOOP_START:
+ 	##transition to next state if button pressed or interrupt had happened
+ 	# beq r16, r0, LOOP_START
+    ##disable external interrupts before drawing
+ # LOOP_MID:
+ 	# wrctl ctl0, r0
+	# wrctl ctl3, r0 
+ 	##draw the screen according to state value
+ 	# movia at, START
+	# beq r13, at, DRAWMENU
+	# movia at, Q1
+ 	# beq r13, at, DRAWQ1
+ 	# movia at, A1
+ 	# beq r13, at, DRAWANSWER1
+ 	# movia at, A2
+ 	# beq r13, at, DRAWANSWER2 
+ 	# movia at, A3
+ 	# beq r13, at, DRAWANSWER3
+ 	# movia at, A4
+ 	# beq r13, at, DRAWANSWER4
+ 	# movia at, A5
+ 	# beq r13, at, DRAWANSWER5
+ 	# movia at, A6
+ 	# beq r13, at, DRAWANSWER6
+ 	# movia at, A7
+ 	# beq r13, at, DRAWANSWER7
+ 	# movia at, A8
+ 	# beq r13, at, DRAWANSWER8
+ 	# movia at, A9
+ 	# beq r13, at, DRAWANSWER9
+ 	# movia at, A10
+ 	# beq r13, at, DRAWANSWER10
+ 	# movia at, A11
+ 	# beq r13, at, DRAWANSWER11
+ 	# movia at, A12
+ 	# beq r13, at, DRAWANSWER12
+ 	# movia at, A13
+ 	# beq r13, at, DRAWANSWER13
+ 	# movia at, A14
+ 	# beq r13, at, DRAWANSWER14
+ 	# movia at, A15
+ 	# beq r13, at, DRAWANSWER15
+ # LOOP_END: 
+ 	##reset state of interrupt (r16) to 0
+	##clear edge capture of button to avoid unecessary interrupts
+ 	# mov r16, r0
+	# movia r12, 0xFFFFFFFF
+ 	# stwio r12, 12(r10)
+ 	##enable external processor interrupts
+	# movi at, IRQ_DEV
+	# wrctl ctl3, at
+ 	# movia at, 0x1
+ 	# wrctl ctl0, at
+	
+	
+ # br LOOP_START
